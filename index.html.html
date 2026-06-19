@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>서울챗</title>
+
+<script type="module">
+  import { initializeFirestore, collection, addDoc, setDoc, deleteDoc, doc, query, orderBy, onSnapshot, limit, where, enableNetwork, disableNetwork }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyD2hHTmoeCDfrEPTMBQ37TtgkrIfK0t6P8",
+    authDomain: "seoul-chat.firebaseapp.com",
+    projectId: "seoul-chat",
+    storageBucket: "seoul-chat.firebasestorage.app",
+    messagingSenderId: "110307693563",
+    appId: "1:110307693563:web:b9cd246f0175ba2799715e"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db  = initializeFirestore(app, { experimentalForceLongPolling: true });
+  window._db = db;
+  window._collection = collection;
+  window._addDoc = addDoc;
+  window._setDoc = setDoc;
+  window._deleteDoc = deleteDoc;
+  window._doc = doc;
+  window._query = query;
+  window._orderBy = orderBy;
+  window._onSnapshot = onSnapshot;
+  window._limit = limit;
+  window._where = where;
+  window._enableNetwork = enableNetwork;
+  window._disableNetwork = disableNetwork;
+  window._firebaseReady = true;
+  document.dispatchEvent(new Event("firebaseReady"));
+</script>
+
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --blue: #185FA5;
+  --blue-l: #E6F1FB;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --c-bg: #f5f6f8;
+  --c-panel: #ffffff;
+  --c-border: rgba(0,0,0,.09);
+  --c-text: #1a1a1a;
+  --c-muted: #6b7280;
+  --c-input: #f3f4f6;
+}
+body {
+  font-family: 'Apple SD Gothic Neo','Noto Sans KR',sans-serif;
+  background: var(--c-bg);
+  color: var(--c-text);
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.screen { display: none; flex-direction: column; flex: 1; overflow: hidden; }
+.screen.active { display: flex; }
+
+/* ── 공통 헤더 ── */
+.top-bar {
+  background: var(--c-panel);
+  border-bottom: 1px solid var(--c-border);
+  height: 54px;
+  display: flex; align-items: center;
+  padding: 0 1rem; gap: 10px; flex-shrink: 0;
+}
+.top-bar .logo { font-size: 18px; font-weight: 700; color: var(--blue); letter-spacing: -0.5px; }
+.top-bar .room-title { font-size: 15px; font-weight: 600; }
+.top-bar .room-sub { font-size: 11px; color: var(--c-muted); }
+.back-btn { background: none; border: none; font-size: 22px; cursor: pointer; color: var(--c-text); padding: 4px 8px 4px 0; line-height: 1; }
+
+/* ── 프로필 설정 화면 ── */
+#profileScreen { align-items: center; justify-content: flex-start; overflow-y: auto; padding: 1.5rem 1rem 2rem; }
+.profile-card {
+  background: var(--c-panel); border-radius: var(--radius-lg);
+  border: 1px solid var(--c-border); padding: 1.5rem;
+  width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 1.2rem;
+}
+.profile-card h2 { font-size: 20px; font-weight: 700; }
+.profile-card .desc { font-size: 13px; color: var(--c-muted); margin-top: -0.8rem; line-height: 1.5; }
+.avatar-section { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.avatar-preview {
+  width: 88px; height: 88px; border-radius: 50%;
+  background: var(--c-input); border: 2px dashed var(--c-border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 36px; cursor: pointer; overflow: hidden; position: relative; transition: border-color .15s;
+}
+.avatar-preview:hover { border-color: var(--blue); }
+.avatar-preview img { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; }
+.avatar-hint { font-size: 12px; color: var(--c-muted); }
+#avatarInput, #editAvatarInput { display: none; }
+.field label { display: block; font-size: 12px; color: var(--c-muted); margin-bottom: 5px; }
+.field input[type="text"] {
+  width: 100%; padding: 10px 12px; border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm); font-size: 15px; background: var(--c-input);
+  color: var(--c-text); outline: none; font-family: inherit;
+}
+.field input[type="text"]:focus { border-color: var(--blue); background: #fff; }
+.gender-group { display: flex; gap: 8px; }
+.gender-btn {
+  flex: 1; padding: 9px 4px; border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm); background: var(--c-input); color: var(--c-muted);
+  font-size: 13px; font-weight: 500; cursor: pointer; text-align: center;
+  transition: all .15s; font-family: inherit;
+}
+.gender-btn:hover { border-color: var(--g-color, var(--blue)); color: var(--g-color, var(--blue)); }
+.gender-btn.selected { background: var(--g-bg, var(--blue-l)); border-color: var(--g-color, var(--blue)); color: var(--g-color, var(--blue)); font-weight: 700; }
+.btn-primary {
+  width: 100%; padding: 13px; background: var(--blue); color: #fff;
+  border: none; border-radius: var(--radius-sm); font-size: 15px; font-weight: 700;
+  cursor: pointer; font-family: inherit; transition: opacity .15s;
+}
+.btn-primary:hover { opacity: .88; }
+.btn-primary:disabled { opacity: .4; cursor: not-allowed; }
+
+/* ── 위치 확인 화면 ── */
+#locationScreen { align-items: center; justify-content: center; padding: 2rem; gap: 1rem; text-align: center; }
+.loc-icon { font-size: 56px; }
+.loc-title { font-size: 20px; font-weight: 700; }
+.loc-desc { font-size: 14px; color: var(--c-muted); line-height: 1.6; max-width: 300px; }
+.loc-spinner { width: 40px; height: 40px; border: 3px solid var(--c-border); border-top-color: var(--blue); border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loc-error { background: #FCEBEB; border: 1px solid #F09595; color: #791F1F; border-radius: var(--radius-sm); padding: 10px 14px; font-size: 13px; line-height: 1.5; max-width: 320px; }
+
+/* ── 메인 메뉴 화면 ── */
+#menuScreen { overflow-y: auto; }
+.menu-header {
+  background: var(--c-panel); border-bottom: 1px solid var(--c-border);
+  padding: 1rem 1rem 0.8rem; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.menu-header-left .logo { font-size: 20px; font-weight: 700; color: var(--blue); }
+.menu-location { font-size: 13px; color: var(--c-muted); margin-top: 2px; }
+.my-avatar-btn {
+  width: 40px; height: 40px; border-radius: 50%;
+  overflow: hidden; background: var(--c-input);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; color: #fff;
+  cursor: pointer; border: 2px solid var(--c-border);
+  flex-shrink: 0; transition: border-color .15s;
+}
+.my-avatar-btn:hover { border-color: var(--blue); }
+.my-avatar-btn img { width: 100%; height: 100%; object-fit: cover; }
+.menu-list { padding: 1rem; display: flex; flex-direction: column; gap: 10px; }
+.menu-item {
+  background: var(--c-panel); border: 1px solid var(--c-border);
+  border-radius: var(--radius-md); padding: 1rem 1.2rem;
+  display: flex; align-items: center; gap: 14px;
+  cursor: pointer; text-align: left; width: 100%; font-family: inherit;
+  transition: border-color .15s, box-shadow .15s;
+}
+.menu-item:hover { border-color: var(--blue); box-shadow: 0 2px 8px rgba(24,95,165,.1); }
+.menu-icon { font-size: 28px; flex-shrink: 0; }
+.menu-item-body { flex: 1; }
+.menu-item-title { font-size: 15px; font-weight: 700; color: var(--c-text); }
+.menu-item-sub { font-size: 12px; color: var(--c-muted); margin-top: 2px; }
+.menu-arrow { font-size: 18px; color: var(--c-muted); }
+
+/* ── 1:1 채팅 목록 ── */
+#dmListScreen { overflow-y: auto; }
+.dm-list { padding: 1rem; display: flex; flex-direction: column; gap: 8px; }
+.dm-item {
+  background: var(--c-panel); border: 1px solid var(--c-border);
+  border-radius: var(--radius-md); padding: 12px 14px;
+  display: flex; align-items: center; gap: 12px; cursor: pointer; transition: border-color .15s;
+}
+.dm-item:hover { border-color: var(--blue); }
+.dm-item-avatar {
+  width: 44px; height: 44px; border-radius: 50%; overflow: hidden;
+  background: var(--c-input); display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; font-size: 13px; font-weight: 700; color: #fff;
+}
+.dm-item-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.dm-item-name { font-size: 14px; font-weight: 600; }
+.dm-empty { text-align: center; color: var(--c-muted); font-size: 14px; padding: 3rem 1rem; }
+
+/* ── 채팅 화면 ── */
+#chatScreen { flex: 1; overflow: hidden; }
+#chatScreen.active { display: flex; flex-direction: column; }
+#messages { flex: 1; overflow-y: auto; padding: 14px 14px 8px; display: flex; flex-direction: column; gap: 3px; }
+#messages::-webkit-scrollbar { width: 4px; }
+#messages::-webkit-scrollbar-thumb { background: #ddd; border-radius: 4px; }
+.msg-row { display: flex; align-items: flex-end; gap: 7px; }
+.msg-row.mine { flex-direction: row-reverse; }
+.avatar-sm {
+  width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0; overflow: hidden;
+  background: var(--c-input); display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; color: #fff;
+}
+.avatar-sm img { width: 100%; height: 100%; object-fit: cover; }
+.msg-row.mine .avatar-sm { display: none; }
+.bubble-wrap { display: flex; flex-direction: column; max-width: 68%; }
+.msg-row.mine .bubble-wrap { align-items: flex-end; }
+.bubble-meta { display: flex; align-items: center; gap: 5px; margin-bottom: 3px; padding-left: 2px; }
+.msg-row.mine .bubble-meta { display: none; }
+.meta-name { font-size: 12px; font-weight: 600; color: var(--c-text); }
+.meta-gender { font-size: 10px; color: var(--c-muted); }
+.bubble {
+  padding: 8px 12px; border-radius: 16px; font-size: 14px; line-height: 1.55;
+  word-break: break-word; background: var(--c-panel); border: 1px solid var(--c-border); color: var(--c-text);
+}
+.msg-row.mine .bubble { background: var(--blue); color: #fff; border-color: var(--blue); }
+.bubble-time { font-size: 10px; color: var(--c-muted); margin-top: 3px; padding: 0 2px; }
+.date-divider { text-align: center; font-size: 11px; color: var(--c-muted); margin: 10px 0; position: relative; }
+.date-divider::before, .date-divider::after { content:''; position: absolute; top: 50%; width: 28%; height: 1px; background: var(--c-border); }
+.date-divider::before { left: 0; }
+.date-divider::after { right: 0; }
+.system-msg {
+  text-align: center; font-size: 11px; color: var(--c-muted);
+  background: rgba(0,0,0,.04); padding: 3px 10px;
+  border-radius: 20px; align-self: center; margin: 4px 0;
+}
+#inputArea {
+  padding: 8px 12px 14px; border-top: 1px solid var(--c-border);
+  background: var(--c-panel); display: flex; gap: 8px; align-items: flex-end;
+}
+#msgInput {
+  flex: 1; resize: none; border: 1px solid var(--c-border); border-radius: var(--radius-md);
+  padding: 9px 12px; font-size: 14px; font-family: inherit;
+  background: var(--c-input); color: var(--c-text); outline: none; max-height: 100px; line-height: 1.5;
+}
+#msgInput:focus { border-color: var(--blue); background: #fff; }
+#sendBtn {
+  width: 40px; height: 40px; background: var(--blue); color: #fff;
+  border: none; border-radius: 50%; font-size: 18px; cursor: pointer; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+#sendBtn:disabled { opacity: .35; cursor: not-allowed; }
+.loading-dots { display: flex; gap: 4px; align-items: center; justify-content: center; padding: 16px; }
+.loading-dots span { width: 6px; height: 6px; background: var(--c-muted); border-radius: 50%; animation: dot .9s infinite; }
+.loading-dots span:nth-child(2) { animation-delay: .2s; }
+.loading-dots span:nth-child(3) { animation-delay: .4s; }
+@keyframes dot { 0%,80%,100%{opacity:.2} 40%{opacity:1} }
+.room-badge { margin-left: auto; font-size: 11px; color: var(--blue); background: var(--blue-l); padding: 3px 9px; border-radius: 20px; }
+
+/* ── 공통 모달 ── */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.45); z-index: 100;
+  align-items: flex-end; justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal-sheet {
+  background: var(--c-panel); border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  padding: 1.5rem 1.5rem 2rem; width: 100%; max-width: 480px;
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  max-height: 90dvh; overflow-y: auto;
+}
+.modal-avatar {
+  width: 80px; height: 80px; border-radius: 50%; overflow: hidden;
+  background: var(--c-input); display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.modal-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.modal-name { font-size: 17px; font-weight: 700; }
+.btn-modal {
+  width: 100%; padding: 12px; background: var(--blue); color: #fff;
+  border: none; border-radius: var(--radius-sm); font-size: 15px; font-weight: 700;
+  cursor: pointer; font-family: inherit; margin-top: 4px; transition: opacity .15s;
+}
+.btn-modal:hover { opacity: .88; }
+.btn-modal.secondary { background: var(--c-input); color: var(--c-text); }
+.warn-text { font-size: 12px; color: #E24B4A; text-align: center; line-height: 1.5; }
+
+/* 내 프로필 편집 폼 */
+.edit-form { width: 100%; display: flex; flex-direction: column; gap: 12px; }
+.edit-avatar-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.edit-avatar-preview {
+  width: 80px; height: 80px; border-radius: 50%; background: var(--c-input);
+  border: 2px dashed var(--c-border); display: flex; align-items: center; justify-content: center;
+  font-size: 30px; cursor: pointer; overflow: hidden; position: relative; transition: border-color .15s;
+}
+.edit-avatar-preview:hover { border-color: var(--blue); }
+.edit-avatar-preview img { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; }
+</style>
+</head>
+<body>
+
+<!-- ① 프로필 설정 화면 -->
+<div id="profileScreen" class="screen active">
+  <div class="profile-card">
+    <div>
+      <h2>서울챗 시작하기</h2>
+      <p class="desc" style="margin-top:4px">내 동네 이웃들과 자유롭게 대화해요.<br>프로필을 설정하면 위치 기반으로 자동 입장돼요.</p>
+    </div>
+    <div class="avatar-section">
+      <div class="avatar-preview" id="avatarPreview" onclick="document.getElementById('avatarInput').click()" title="사진 선택">
+        <span id="avatarEmoji">📷</span>
+      </div>
+      <span class="avatar-hint">탭해서 사진 업로드 (선택)</span>
+      <input type="file" id="avatarInput" accept="image/*">
+    </div>
+    <div class="field">
+      <label>닉네임 <span style="color:#E24B4A">*</span></label>
+      <input type="text" id="nicknameInput" placeholder="예: 마포 이웃" maxlength="16" oninput="checkReady()">
+    </div>
+    <div class="field">
+      <label>성별 <span style="color:#E24B4A">*</span></label>
+      <div class="gender-group">
+        <button class="gender-btn" data-g="남" onclick="selectGender(this,'setup')" style="--g-color:#4A90D9;--g-bg:#EAF4FF">🙋‍♂️ 남</button>
+        <button class="gender-btn" data-g="여" onclick="selectGender(this,'setup')" style="--g-color:#D94A7A;--g-bg:#FFE8F2">🙋‍♀️ 여</button>
+        <button class="gender-btn" data-g="🦄" onclick="selectGender(this,'setup')" style="--g-color:#9B59B6;--g-bg:#F3E8FF">🦄 유니콘</button>
+      </div>
+    </div>
+    <button class="btn-primary" id="startBtn" onclick="goLocation()" disabled>내 위치로 동네 찾기 →</button>
+  </div>
+</div>
+
+<!-- ② 위치 확인 화면 -->
+<div id="locationScreen" class="screen">
+  <div class="loc-icon" id="locIcon">📍</div>
+  <div class="loc-title" id="locTitle">위치를 확인하는 중...</div>
+  <div class="loc-desc" id="locDesc">브라우저에서 위치 권한을 허용해 주세요.<br>동네 채팅방에 자동으로 입장돼요.</div>
+  <div class="loc-spinner" id="locSpinner"></div>
+  <div class="loc-error" id="locError" style="display:none"></div>
+</div>
+
+<!-- ③ 메인 메뉴 화면 -->
+<div id="menuScreen" class="screen">
+  <div class="menu-header">
+    <div class="menu-header-left">
+      <div class="logo">서울챗</div>
+      <div class="menu-location" id="menuLocation"></div>
+    </div>
+    <div class="my-avatar-btn" id="myAvatarBtn" onclick="openMyProfile()"></div>
+  </div>
+  <div class="menu-list">
+    <button class="menu-item" onclick="enterGroupChat('gu')">
+      <span class="menu-icon">🏙️</span>
+      <div class="menu-item-body">
+        <div class="menu-item-title" id="guMenuTitle">우리 구 톡방</div>
+        <div class="menu-item-sub">구 전체 이웃과 대화해요</div>
+      </div>
+      <span class="menu-arrow">›</span>
+    </button>
+    <button class="menu-item" onclick="enterGroupChat('dong')">
+      <span class="menu-icon">🏘️</span>
+      <div class="menu-item-body">
+        <div class="menu-item-title" id="dongMenuTitle">우리 동 톡방</div>
+        <div class="menu-item-sub">동네 이웃과 대화해요</div>
+      </div>
+      <span class="menu-arrow">›</span>
+    </button>
+    <button class="menu-item" onclick="showDmList()">
+      <span class="menu-icon">💬</span>
+      <div class="menu-item-body">
+        <div class="menu-item-title">1:1 채팅 목록</div>
+        <div class="menu-item-sub">개인 메시지</div>
+      </div>
+      <span class="menu-arrow">›</span>
+    </button>
+  </div>
+</div>
+
+<!-- ④ 1:1 채팅 목록 -->
+<div id="dmListScreen" class="screen">
+  <div class="top-bar">
+    <button class="back-btn" onclick="showScreen('menuScreen')" aria-label="뒤로">←</button>
+    <div class="room-title">1:1 채팅 목록</div>
+  </div>
+  <div class="dm-list" id="dmList"></div>
+</div>
+
+<!-- ⑤ 채팅 화면 -->
+<div id="chatScreen" class="screen">
+  <div class="top-bar">
+    <button class="back-btn" onclick="goBack()" aria-label="뒤로">←</button>
+    <div>
+      <div class="room-title" id="roomTitle">채팅방</div>
+      <div class="room-sub" id="roomSub"></div>
+    </div>
+    <div class="room-badge" id="roomBadge"></div>
+    <div id="onlineCount" style="font-size:12px;color:var(--c-muted);white-space:nowrap;margin-left:4px"></div>
+  </div>
+  <div id="messages"><div class="loading-dots"><span></span><span></span><span></span></div></div>
+  <div id="inputArea">
+    <textarea id="msgInput" placeholder="메시지를 입력하세요..." rows="1"
+      onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+    <button id="sendBtn" onclick="sendMsg()" aria-label="전송">➤</button>
+  </div>
+</div>
+
+<!-- 내 프로필 모달 -->
+<div class="modal-overlay" id="myProfileModal" onclick="closeMyProfile(event)">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <!-- 보기 모드 -->
+    <div id="myProfileView" style="width:100%;display:flex;flex-direction:column;align-items:center;gap:12px">
+      <div class="modal-avatar" id="myViewAvatar"></div>
+      <div class="modal-name" id="myViewName"></div>
+      <button class="btn-modal" onclick="showProfileEditForm()">프로필 변경</button>
+    </div>
+    <!-- 수정 모드 -->
+    <div id="myProfileEditForm" style="display:none;width:100%">
+      <div class="warn-text" style="margin-bottom:12px">⚠️ 프로필 변경 시 모든 채팅 기록이 초기화됩니다</div>
+      <div class="edit-form">
+        <div class="edit-avatar-wrap">
+          <div class="edit-avatar-preview" id="editAvatarPreview" onclick="document.getElementById('editAvatarInput').click()">
+            <span id="editAvatarEmoji">📷</span>
+          </div>
+          <span style="font-size:12px;color:var(--c-muted)">탭해서 사진 변경 (선택)</span>
+          <input type="file" id="editAvatarInput" accept="image/*">
+        </div>
+        <div class="field">
+          <label>닉네임</label>
+          <input type="text" id="editNicknameInput" maxlength="16" oninput="checkEditReady()">
+        </div>
+        <div class="field">
+          <label>성별</label>
+          <div class="gender-group">
+            <button class="gender-btn" data-g="남" onclick="selectGender(this,'edit')" style="--g-color:#4A90D9;--g-bg:#EAF4FF">🙋‍♂️ 남</button>
+            <button class="gender-btn" data-g="여" onclick="selectGender(this,'edit')" style="--g-color:#D94A7A;--g-bg:#FFE8F2">🙋‍♀️ 여</button>
+            <button class="gender-btn" data-g="🦄" onclick="selectGender(this,'edit')" style="--g-color:#9B59B6;--g-bg:#F3E8FF">🦄 유니콘</button>
+          </div>
+        </div>
+        <button class="btn-modal" id="saveProfileBtn" onclick="saveProfile()" disabled>저장</button>
+        <button class="btn-modal secondary" onclick="cancelProfileEdit()" style="margin-top:4px">취소</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 상대방 프로필 모달 -->
+<div class="modal-overlay" id="partnerModal" onclick="closePartnerModal(event)">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-avatar" id="partnerAvatar"></div>
+    <div class="modal-name" id="partnerName"></div>
+    <button class="btn-modal" onclick="startDM()">1:1 채팅</button>
+  </div>
+</div>
+
+<script>
+// ── 상태 ────────────────────────────────────────────────
+let profile = JSON.parse(localStorage.getItem('dnTalk_profile') || 'null');
+let profileResetTime = new Date(parseInt(localStorage.getItem('dnTalk_resetTime') || '0'));
+let currentLocation = { gu: '', dong: '' };
+let currentRoom = null;
+let chatBackTarget = 'menuScreen';
+let unsubscribe = null;
+let lastDate = '';
+let selectedGender = '';
+let editSelectedGender = '';
+let editAvatarData = '';
+let modalTarget = null;
+let presenceDocRef = null;
+let unsubPresence = null;
+
+// ── 시작 시 프로필 확인 ──────────────────────────────────
+window.addEventListener('load', () => {
+  if (profile) {
+    showScreen('locationScreen');
+    resetLocUI();
+    requestLocation();
+  }
+});
+
+// ── 탭/브라우저 종료 시 presence 정리 ────────────────────
+window.addEventListener('beforeunload', () => { leavePresence(); });
+window.addEventListener('pagehide', () => { leavePresence(); });
+
+// ── 화면 활성화 시 Firestore 재연결 ──────────────────────
+document.addEventListener('visibilitychange', async () => {
+  if (!document.hidden && window._firebaseReady) {
+    try { await window._disableNetwork(window._db); await window._enableNetwork(window._db); } catch(e) {}
+  }
+});
+
+// ── 아바타 업로드 (프로필 설정) ──────────────────────────
+document.getElementById('avatarInput').addEventListener('change', e => {
+  compressAndSetAvatar(e.target.files[0], 'setup');
+});
+
+// ── 아바타 업로드 (프로필 수정) ──────────────────────────
+document.getElementById('editAvatarInput').addEventListener('change', e => {
+  compressAndSetAvatar(e.target.files[0], 'edit');
+});
+
+function compressAndSetAvatar(file, mode) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const tempImg = new Image();
+    tempImg.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 80; canvas.height = 80;
+      const ctx = canvas.getContext('2d');
+      const size = Math.min(tempImg.width, tempImg.height);
+      ctx.drawImage(tempImg, (tempImg.width-size)/2, (tempImg.height-size)/2, size, size, 0, 0, 80, 80);
+      const compressed = canvas.toDataURL('image/jpeg', 0.7);
+      if (mode === 'setup') {
+        document.getElementById('avatarEmoji').style.display = 'none';
+        let img = document.getElementById('avatarPreview').querySelector('img');
+        if (!img) { img = document.createElement('img'); document.getElementById('avatarPreview').appendChild(img); }
+        img.src = compressed;
+        localStorage.setItem('dnTalk_avatar', compressed);
+      } else {
+        editAvatarData = compressed;
+        document.getElementById('editAvatarEmoji').style.display = 'none';
+        let img = document.getElementById('editAvatarPreview').querySelector('img');
+        if (!img) { img = document.createElement('img'); document.getElementById('editAvatarPreview').appendChild(img); }
+        img.src = compressed;
+      }
+    };
+    tempImg.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── 성별 선택 ────────────────────────────────────────────
+function selectGender(btn, mode) {
+  const group = btn.closest('.gender-group');
+  group.querySelectorAll('.gender-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  if (mode === 'setup') { selectedGender = btn.dataset.g; checkReady(); }
+  else { editSelectedGender = btn.dataset.g; checkEditReady(); }
+}
+
+function checkReady() {
+  const nick = document.getElementById('nicknameInput').value.trim();
+  document.getElementById('startBtn').disabled = !(nick && selectedGender);
+}
+
+function checkEditReady() {
+  const nick = document.getElementById('editNicknameInput').value.trim();
+  document.getElementById('saveProfileBtn').disabled = !(nick && editSelectedGender);
+}
+
+// ── 화면 전환 ────────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ── 위치 화면으로 ────────────────────────────────────────
+function goLocation() {
+  const nick = document.getElementById('nicknameInput').value.trim();
+  const gender = selectedGender;
+  const avatar = localStorage.getItem('dnTalk_avatar') || '';
+  profile = { nickname: nick, gender, avatar };
+  localStorage.setItem('dnTalk_profile', JSON.stringify(profile));
+  // 새 프로필 = 기록 초기화
+  const resetTime = Date.now();
+  localStorage.setItem('dnTalk_resetTime', resetTime.toString());
+  profileResetTime = new Date(resetTime);
+  localStorage.removeItem('dnTalk_dms');
+  showScreen('locationScreen');
+  resetLocUI();
+  requestLocation();
+}
+
+function resetLocUI() {
+  document.getElementById('locIcon').textContent = '📍';
+  document.getElementById('locTitle').textContent = '위치를 확인하는 중...';
+  document.getElementById('locDesc').textContent = '브라우저에서 위치 권한을 허용해 주세요.\n동네 채팅방에 자동으로 입장돼요.';
+  document.getElementById('locSpinner').style.display = 'block';
+  document.getElementById('locError').style.display = 'none';
+}
+
+// ── 위치 요청 ────────────────────────────────────────────
+function requestLocation() {
+  if (!navigator.geolocation) { showLocError('이 브라우저는 위치 기능을 지원하지 않아요.'); return; }
+  navigator.geolocation.getCurrentPosition(onLocSuccess, onLocError, { timeout: 10000, maximumAge: 60000 });
+}
+
+async function onLocSuccess(pos) {
+  const { latitude: lat, longitude: lng } = pos.coords;
+  document.getElementById('locTitle').textContent = '동네를 찾는 중...';
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`, { headers: { 'Accept-Language': 'ko' } });
+    const data = await res.json();
+    const addr = data.address || {};
+    const gu   = addr.city_district || addr.borough || addr.county || '알 수 없는 구';
+    const dong = addr.neighbourhood || addr.quarter || addr.suburb || addr.village || '알 수 없는 동';
+    currentLocation = { gu, dong };
+    showMenu();
+  } catch(e) {
+    showLocError('주소를 가져오는 데 실패했어요.\n잠시 후 다시 시도해 주세요.');
+  }
+}
+
+function onLocError(err) {
+  const msgs = { 1:'위치 권한이 거부됐어요.\n\n브라우저 주소창 왼쪽 🔒 아이콘 → 위치 → 허용\n으로 변경 후 새로고침해 주세요.', 2:'현재 위치를 가져올 수 없어요.', 3:'위치 요청 시간이 초과됐어요.' };
+  showLocError(msgs[err.code] || '알 수 없는 오류가 발생했어요.');
+}
+
+function showLocError(msg) {
+  document.getElementById('locSpinner').style.display = 'none';
+  document.getElementById('locIcon').textContent = '🚫';
+  document.getElementById('locTitle').textContent = '위치를 가져올 수 없어요';
+  document.getElementById('locDesc').textContent = '';
+  const el = document.getElementById('locError');
+  el.style.display = 'block'; el.style.whiteSpace = 'pre-line'; el.textContent = msg;
+}
+
+// ── 메인 메뉴 ────────────────────────────────────────────
+function showMenu() {
+  const { gu, dong } = currentLocation;
+  document.getElementById('menuLocation').textContent = gu + ' · ' + dong;
+  document.getElementById('guMenuTitle').textContent = gu + ' 톡방';
+  document.getElementById('dongMenuTitle').textContent = dong + ' 톡방';
+  renderMyAvatarBtn();
+  showScreen('menuScreen');
+}
+
+function renderMyAvatarBtn() {
+  const btn = document.getElementById('myAvatarBtn');
+  if (profile?.avatar) {
+    btn.innerHTML = `<img src="${profile.avatar}" alt="">`;
+  } else {
+    const color = avatarColor(profile?.nickname || '');
+    const initials = (profile?.nickname || '?').slice(-2);
+    btn.style.background = color;
+    btn.innerHTML = `<span style="color:#fff;font-size:13px;font-weight:700">${initials}</span>`;
+  }
+}
+
+// ── 내 프로필 모달 ────────────────────────────────────────
+function openMyProfile() {
+  // 보기 모드로 초기화
+  document.getElementById('myProfileView').style.display = 'flex';
+  document.getElementById('myProfileEditForm').style.display = 'none';
+
+  const avatarEl = document.getElementById('myViewAvatar');
+  if (profile?.avatar) {
+    avatarEl.innerHTML = `<img src="${profile.avatar}" alt="">`;
+  } else {
+    const color = avatarColor(profile?.nickname || '');
+    const initials = (profile?.nickname || '?').slice(-2);
+    avatarEl.innerHTML = `<span style="background:${color};width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;font-weight:700;border-radius:50%">${initials}</span>`;
+  }
+  const genderIcon = { '남':'👦', '여':'👧', '🦄':'🦄' }[profile?.gender] || '';
+  document.getElementById('myViewName').textContent = (profile?.nickname || '') + (genderIcon ? '  ' + genderIcon : '');
+  document.getElementById('myProfileModal').classList.add('open');
+}
+
+function closeMyProfile(e) {
+  if (e && e.target !== document.getElementById('myProfileModal')) return;
+  document.getElementById('myProfileModal').classList.remove('open');
+}
+
+function showProfileEditForm() {
+  document.getElementById('myProfileView').style.display = 'none';
+  document.getElementById('myProfileEditForm').style.display = 'block';
+
+  // 현재 프로필 값으로 초기화
+  editAvatarData = profile?.avatar || '';
+  editSelectedGender = profile?.gender || '';
+
+  document.getElementById('editNicknameInput').value = profile?.nickname || '';
+
+  const preview = document.getElementById('editAvatarPreview');
+  const oldImg = preview.querySelector('img');
+  if (oldImg) oldImg.remove();
+  document.getElementById('editAvatarEmoji').style.display = '';
+  if (editAvatarData) {
+    document.getElementById('editAvatarEmoji').style.display = 'none';
+    const img = document.createElement('img'); img.src = editAvatarData; preview.appendChild(img);
+  }
+
+  document.querySelectorAll('#myProfileEditForm .gender-btn').forEach(b => {
+    b.classList.toggle('selected', b.dataset.g === editSelectedGender);
+  });
+  checkEditReady();
+}
+
+function cancelProfileEdit() {
+  document.getElementById('myProfileView').style.display = 'flex';
+  document.getElementById('myProfileEditForm').style.display = 'none';
+}
+
+function saveProfile() {
+  const nick = document.getElementById('editNicknameInput').value.trim();
+  if (!nick || !editSelectedGender) return;
+  const avatar = editAvatarData || '';
+  profile = { nickname: nick, gender: editSelectedGender, avatar };
+  localStorage.setItem('dnTalk_profile', JSON.stringify(profile));
+  // 기록 초기화
+  const resetTime = Date.now();
+  localStorage.setItem('dnTalk_resetTime', resetTime.toString());
+  profileResetTime = new Date(resetTime);
+  localStorage.removeItem('dnTalk_dms');
+  // 진행 중인 채팅 종료
+  if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+  document.getElementById('myProfileModal').classList.remove('open');
+  renderMyAvatarBtn();
+  showMenu();
+}
+
+// ── 그룹 채팅 입장 ────────────────────────────────────────
+function enterGroupChat(type) {
+  const { gu, dong } = currentLocation;
+  if (type === 'gu') enterChat('gu_' + gu, gu + ' 톡방', '', gu, 'menuScreen');
+  else enterChat('dong_' + gu + '_' + dong, dong + ' 톡방', gu, gu + ' · ' + dong, 'menuScreen');
+}
+
+// ── 1:1 채팅 입장 ────────────────────────────────────────
+function enterDM(partnerNick, partnerAvatarData, partnerGender) {
+  closePartnerModal();
+  const dmId = 'dm_' + [profile.nickname, partnerNick].sort().join('__');
+  saveDmToList({ id: dmId, partnerNick, partnerAvatar: partnerAvatarData, partnerGender });
+  enterChat(dmId, partnerNick, '1:1 채팅', '', 'dmListScreen', true);
+}
+
+// ── Presence (접속자 수) ──────────────────────────────────
+function joinPresence(roomId) {
+  if (!window._firebaseReady) return;
+  leavePresence();
+  const uid = profile.nickname + '_' + Math.random().toString(36).slice(2, 8);
+  presenceDocRef = window._doc(window._db, 'rooms', roomId, 'presence', uid);
+  window._setDoc(presenceDocRef, { nick: profile.nickname, ts: new Date() });
+
+  const presColRef = window._collection(window._db, 'rooms', roomId, 'presence');
+  unsubPresence = window._onSnapshot(presColRef, snap => {
+    const count = snap.size;
+    const el = document.getElementById('onlineCount');
+    if (el) el.textContent = '👥 ' + count + '명';
+  });
+}
+
+function leavePresence() {
+  if (unsubPresence) { unsubPresence(); unsubPresence = null; }
+  if (presenceDocRef) {
+    window._deleteDoc(presenceDocRef).catch(() => {});
+    presenceDocRef = null;
+  }
+  const el = document.getElementById('onlineCount');
+  if (el) el.textContent = '';
+}
+
+// ── 채팅 입장 (공통) ─────────────────────────────────────
+function enterChat(roomId, title, sub, badge, backTarget, isDM = false) {
+  leavePresence();
+  if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+  currentRoom = { id: roomId, isDM };
+  chatBackTarget = backTarget;
+  lastDate = '';
+  document.getElementById('roomTitle').textContent = title;
+  document.getElementById('roomSub').textContent = sub;
+  document.getElementById('roomBadge').textContent = badge;
+  document.getElementById('onlineCount').textContent = '';
+  document.getElementById('messages').innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div>';
+  showScreen('chatScreen');
+
+  const connect = () => {
+    const colRef = window._collection(window._db, 'rooms', roomId, 'messages');
+    const q = window._query(colRef, window._orderBy('ts'), window._limit(100));
+
+    const renderedIds = new Set();
+    let initialSnapDone = false;
+    unsubscribe = window._onSnapshot(q, snap => {
+      const el = document.getElementById('messages');
+      if (!initialSnapDone) {
+        initialSnapDone = true;
+        el.innerHTML = ''; lastDate = '';
+        snap.docs.forEach(doc => {
+          const msgTs = doc.data().ts?.toDate?.() || new Date(0);
+          if (msgTs < profileResetTime) renderedIds.add(doc.id);
+        });
+        // DM만 입장 메시지 표시
+        if (isDM) {
+          window._addDoc(colRef, { type:'system', text: profile.nickname + '님이 입장했습니다', ts: new Date() });
+        }
+      }
+      snap.docChanges().forEach(ch => {
+        if (ch.type === 'added' && !renderedIds.has(ch.doc.id)) {
+          renderedIds.add(ch.doc.id);
+          appendMsg(ch.doc.data());
+          el.scrollTop = el.scrollHeight;
+        }
+      });
+    });
+
+    joinPresence(roomId);
+  };
+
+  if (window._firebaseReady) connect();
+  else document.addEventListener('firebaseReady', connect, { once: true });
+}
+
+// ── DM 목록 관리 ─────────────────────────────────────────
+function getDmList() { return JSON.parse(localStorage.getItem('dnTalk_dms') || '[]'); }
+function saveDmToList(dm) {
+  const list = getDmList().filter(d => d.id !== dm.id);
+  list.unshift(dm);
+  localStorage.setItem('dnTalk_dms', JSON.stringify(list));
+}
+function showDmList() {
+  const list = getDmList();
+  const el = document.getElementById('dmList');
+  if (list.length === 0) {
+    el.innerHTML = '<div class="dm-empty">아직 1:1 채팅이 없어요.<br>채팅방에서 상대방 프로필을 눌러 시작해보세요!</div>';
+  } else {
+    el.innerHTML = '';
+    list.forEach(dm => {
+      const item = document.createElement('div');
+      item.className = 'dm-item';
+      item.onclick = () => enterChat(dm.id, dm.partnerNick, '1:1 채팅', '', 'dmListScreen', true);
+      let avatarHtml = dm.partnerAvatar
+        ? `<img src="${dm.partnerAvatar}" alt="">`
+        : `<span style="background:${avatarColor(dm.partnerNick||'')};width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:700;border-radius:50%">${(dm.partnerNick||'?').slice(-2)}</span>`;
+      const genderIcon = { '남':'👦', '여':'👧', '🦄':'🦄' }[dm.partnerGender] || '';
+      item.innerHTML = `<div class="dm-item-avatar">${avatarHtml}</div><div class="dm-item-name">${esc(dm.partnerNick)} ${genderIcon}</div>`;
+      el.appendChild(item);
+    });
+  }
+  showScreen('dmListScreen');
+}
+
+// ── 메시지 렌더 ──────────────────────────────────────────
+const AVATAR_COLORS = ['#534AB7','#1D9E75','#D85A30','#185FA5','#BA7517','#993556'];
+function avatarColor(name) {
+  let h = 0; for (const c of name) h = (h * 31 + c.charCodeAt(0)) & 0xfff;
+  return AVATAR_COLORS[h % AVATAR_COLORS.length];
+}
+
+function appendMsg(data) {
+  const el = document.getElementById('messages');
+  if (data.type === 'system') {
+    const div = document.createElement('div'); div.className = 'system-msg'; div.textContent = data.text; el.appendChild(div); return;
+  }
+  const ts = data.ts?.toDate ? data.ts.toDate() : new Date();
+  const dateStr = ts.toLocaleDateString('ko-KR', { month:'long', day:'numeric', weekday:'short' });
+  if (dateStr !== lastDate) {
+    lastDate = dateStr;
+    const d = document.createElement('div'); d.className = 'date-divider'; d.textContent = dateStr; el.appendChild(d);
+  }
+  const isMine = data.sender === profile.nickname;
+  const timeStr = ts.toLocaleTimeString('ko-KR', { hour:'2-digit', minute:'2-digit' });
+  const genderLabel = { '남':'👦', '여':'👧', '🦄':'🦄' }[data.gender] || '';
+  const row = document.createElement('div');
+  row.className = 'msg-row' + (isMine ? ' mine' : '');
+  let avatarHtml = data.avatar
+    ? `<img src="${data.avatar}" alt="">`
+    : (() => { const color = avatarColor(data.sender||''); const initials = (data.sender||'?').slice(-2); return `<span style="background:${color};width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700;border-radius:50%">${initials}</span>`; })();
+  const avatarClick = (!isMine && !currentRoom?.isDM)
+    ? `style="cursor:pointer" onclick="openPartnerModal('${esc(data.sender||'')}','${esc(data.gender||'')}','${esc(data.avatar||'')}',this.innerHTML)"`
+    : '';
+  row.innerHTML = `
+    <div class="avatar-sm" ${avatarClick}>${avatarHtml}</div>
+    <div class="bubble-wrap">
+      <div class="bubble-meta"><span class="meta-name">${esc(data.sender||'')}</span><span class="meta-gender">${genderLabel}</span></div>
+      <div class="bubble">${esc(data.text)}</div>
+      <div class="bubble-time">${timeStr}</div>
+    </div>`;
+  el.appendChild(row);
+}
+
+// ── 상대방 프로필 모달 ────────────────────────────────────
+function openPartnerModal(sender, gender, avatar, avatarHtml) {
+  const genderIcon = { '남':'👦', '여':'👧', '🦄':'🦄' }[gender] || '';
+  document.getElementById('partnerName').textContent = sender + (genderIcon ? '  ' + genderIcon : '');
+  document.getElementById('partnerAvatar').innerHTML = avatarHtml;
+  modalTarget = { nick: sender, avatar, gender };
+  document.getElementById('partnerModal').classList.add('open');
+}
+function closePartnerModal(e) {
+  if (e && e.target !== document.getElementById('partnerModal')) return;
+  document.getElementById('partnerModal').classList.remove('open');
+}
+function startDM() {
+  if (!modalTarget) return;
+  enterDM(modalTarget.nick, modalTarget.avatar, modalTarget.gender);
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/\n/g,'<br>');
+}
+
+// ── 메시지 전송 ──────────────────────────────────────────
+function sendMsg() {
+  if (!currentRoom || !window._firebaseReady) return;
+  const input = document.getElementById('msgInput');
+  const text = input.value.trim();
+  if (!text) return;
+  const colRef = window._collection(window._db, 'rooms', currentRoom.id, 'messages');
+  window._addDoc(colRef, {
+    sender: profile.nickname, gender: profile.gender,
+    avatar: profile.avatar || '', text, ts: new Date(),
+  }).catch(err => alert('전송 오류: ' + err.message));
+  input.value = ''; input.style.height = 'auto';
+}
+
+function handleKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); } }
+function autoResize(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 100) + 'px'; }
+
+// ── 뒤로가기 ─────────────────────────────────────────────
+function goBack() {
+  leavePresence();
+  if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+  lastDate = '';
+  if (chatBackTarget === 'dmListScreen') showDmList();
+  else showMenu();
+}
+</script>
+</body>
+</html>
