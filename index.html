@@ -491,6 +491,7 @@ let presenceDocRef = null;
 let unsubPresence = null;
 let unsubInbox = null;
 let dmBadgeCount = 0;
+let dmRoomSubs = {};
 
 // ── 시작 시 프로필 확인 ──────────────────────────────────
 window.addEventListener('load', () => {
@@ -647,8 +648,8 @@ function showMenu() {
   document.getElementById('dongMenuTitle').textContent = dong + ' 톡방';
   renderMyAvatarBtn();
   showScreen('menuScreen');
-  if (window._firebaseReady) subscribeInbox();
-  else document.addEventListener('firebaseReady', subscribeInbox, { once: true });
+  if (window._firebaseReady) { subscribeInbox(); subscribeDmRooms(); }
+  else document.addEventListener('firebaseReady', () => { subscribeInbox(); subscribeDmRooms(); }, { once: true });
 }
 
 function renderMyAvatarBtn() {
@@ -760,7 +761,7 @@ function enterDM(partnerNick, partnerAvatarData, partnerGender) {
   enterChat(dmId, partnerNick, '1:1 채팅', '', 'dmListScreen', true);
 }
 
-// ── 수신함 구독 ──────────────────────────────────────────
+// ── 수신함 구독 (새 DM 상대 추가 / 나감 알림) ────────────
 let toastDmId = null;
 let toastTimer = null;
 
@@ -774,20 +775,71 @@ function subscribeInbox() {
     snap.docChanges().forEach(ch => {
       if (ch.type !== 'added') return;
       const d = ch.doc.data();
-      // 상대방이 나간 경우
       if (d.type === 'left') {
         markPartnerLeft(d.dmId);
-        // DM 목록 화면이 열려 있으면 즉시 갱신
         if (document.getElementById('dmListScreen').classList.contains('active')) showDmList();
         return;
       }
       if (d.partnerNick === profile.nickname) return;
       saveDmToList({ id: d.dmId, partnerNick: d.partnerNick, partnerAvatar: d.partnerAvatar, partnerGender: d.partnerGender });
-      if (currentRoom?.id === d.dmId) return;
-      if (isMuted(d.dmId)) return; // 알림 끄기 상태면 토스트/뱃지 생략
-      dmBadgeCount++;
-      updateDmBadge();
-      showDmToast(d.partnerNick, d.dmId);
+      // 새 상대 추가됐으면 해당 방도 구독
+      subscribeDmRooms();
+    });
+  });
+}
+
+// ── DM 방 메시지 구독 (알림 + 마지막 메시지 미리보기) ────
+function saveDmLastMsg(dmId, text, sender) {
+  const msgs = JSON.parse(localStorage.getItem('dnTalk_lastMsgs') || '{}');
+  msgs[dmId] = { text, sender };
+  localStorage.setItem('dnTalk_lastMsgs', JSON.stringify(msgs));
+}
+function getDmLastMsg(dmId) {
+  return (JSON.parse(localStorage.getItem('dnTalk_lastMsgs') || '{}'))[dmId] || null;
+}
+
+function subscribeDmRooms() {
+  if (!window._firebaseReady || !profile) return;
+  const list = getDmList();
+  const activeIds = new Set(list.map(d => d.id));
+
+  // 목록에서 빠진 방 구독 해제
+  Object.keys(dmRoomSubs).forEach(id => {
+    if (!activeIds.has(id)) { dmRoomSubs[id](); delete dmRoomSubs[id]; }
+  });
+
+  list.forEach(dm => {
+    if (dmRoomSubs[dm.id]) return; // 이미 구독 중
+    const colRef = window._collection(window._db, 'rooms', dm.id, 'messages');
+    const q = window._query(colRef, window._orderBy('ts'), window._limit(50));
+    let initialized = false;
+    dmRoomSubs[dm.id] = window._onSnapshot(q, snap => {
+      if (!initialized) {
+        initialized = true;
+        // 기존 메시지 중 마지막 것으로 미리보기 초기화
+        const docs = snap.docs.filter(d => d.data().text && d.data().type !== 'system');
+        if (docs.length > 0) {
+          const last = docs[docs.length - 1].data();
+          saveDmLastMsg(dm.id, last.text, last.sender);
+          if (document.getElementById('dmListScreen').classList.contains('active')) showDmList();
+        }
+        return;
+      }
+      snap.docChanges().forEach(ch => {
+        if (ch.type !== 'added') return;
+        const d = ch.doc.data();
+        if (!d.text || d.type === 'system') return;
+        // 마지막 메시지 저장 & 목록 갱신
+        saveDmLastMsg(dm.id, d.text, d.sender);
+        if (document.getElementById('dmListScreen').classList.contains('active')) showDmList();
+        // 내가 보낸 메시지이거나, 현재 그 방에 있으면 알림 생략
+        if (d.sender === profile.nickname) return;
+        if (currentRoom?.id === dm.id) return;
+        if (isMuted(dm.id)) return;
+        dmBadgeCount++;
+        updateDmBadge();
+        showDmToast(d.sender, dm.id, d.text);
+      });
     });
   });
 }
@@ -803,13 +855,14 @@ function updateDmBadge() {
   }
 }
 
-function showDmToast(fromNick, dmId) {
+function showDmToast(fromNick, dmId, msgText) {
   toastDmId = dmId;
-  document.getElementById('dmToastText').textContent = fromNick + '님이 1:1 채팅을 요청했어요';
+  const preview = msgText ? msgText.slice(0, 28) + (msgText.length > 28 ? '…' : '') : '';
+  document.getElementById('dmToastText').textContent = fromNick + ': ' + preview;
   const toast = document.getElementById('dmToast');
   toast.classList.add('show');
   if (toastTimer) clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 5000);
 }
 
 function goToDmFromToast() {
@@ -940,12 +993,17 @@ function leaveDm(dmId, partnerNick, e) {
     const inboxRef = window._doc(window._db, 'users', partnerNick, 'inbox', dmId + '_left');
     window._setDoc(inboxRef, { dmId, type: 'left', from: profile.nickname, ts: new Date() }).catch(() => {});
   }
+  // 해당 방 구독 해제
+  if (dmRoomSubs[dmId]) { dmRoomSubs[dmId](); delete dmRoomSubs[dmId]; }
   // 내 목록에서 제거
   const list = getDmList().filter(d => d.id !== dmId);
   localStorage.setItem('dnTalk_dms', JSON.stringify(list));
-  // mute 목록에서도 제거
+  // mute / lastMsg 목록에서도 제거
   const muted = getMutedDms().filter(id => id !== dmId);
   localStorage.setItem('dnTalk_mute', JSON.stringify(muted));
+  const msgs = JSON.parse(localStorage.getItem('dnTalk_lastMsgs') || '{}');
+  delete msgs[dmId];
+  localStorage.setItem('dnTalk_lastMsgs', JSON.stringify(msgs));
   showDmList();
 }
 
@@ -968,13 +1026,21 @@ function showDmList() {
         ? `<img src="${dm.partnerAvatar}" alt="">`
         : `<span style="background:${avatarColor(dm.partnerNick||'')};width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:700;border-radius:50%">${(dm.partnerNick||'?').slice(-2)}</span>`;
       const genderIcon = { '남':'👦', '여':'👧', '🦄':'🦄' }[dm.partnerGender] || '';
-      const leftText = isLeft ? `<div class="dm-item-left">상대방이 채팅방을 나갔습니다</div>` : '';
+      const lastMsg = getDmLastMsg(dm.id);
+      let subText = '';
+      if (isLeft) {
+        subText = `<div class="dm-item-left">상대방이 채팅방을 나갔습니다</div>`;
+      } else if (lastMsg) {
+        const preview = lastMsg.text.slice(0, 30) + (lastMsg.text.length > 30 ? '…' : '');
+        const isMine = lastMsg.sender === profile.nickname;
+        subText = `<div class="dm-item-left">${isMine ? '나: ' : ''}${esc(preview)}</div>`;
+      }
       const muteIcon = muted ? '🔕' : '🔔';
       item.innerHTML = `
         <div class="dm-item-avatar">${avatarHtml}</div>
         <div class="dm-item-info">
           <div class="dm-item-name">${esc(dm.partnerNick)} ${genderIcon}</div>
-          ${leftText}
+          ${subText}
         </div>
         <div class="dm-item-actions">
           <button class="dm-action-btn${muted?' muted':''}" title="${muted?'알림 켜기':'알림 끄기'}" onclick="toggleMute('${dm.id}',event)">${muteIcon}</button>
