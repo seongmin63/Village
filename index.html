@@ -242,6 +242,21 @@ body {
 .loading-dots span:nth-child(3) { animation-delay: .4s; }
 @keyframes dot { 0%,80%,100%{opacity:.2} 40%{opacity:1} }
 .room-badge { margin-left: auto; font-size: 11px; color: var(--blue); background: var(--blue-l); padding: 3px 9px; border-radius: 20px; }
+.notif-badge {
+  display: none; min-width: 18px; height: 18px; background: #E24B4A; color: #fff;
+  border-radius: 20px; font-size: 11px; font-weight: 700; padding: 0 5px;
+  align-items: center; justify-content: center; margin-left: auto;
+}
+.notif-badge.show { display: flex; }
+.notif-toast {
+  position: fixed; top: 60px; left: 50%; transform: translateX(-50%) translateY(-20px);
+  background: #1a1a1a; color: #fff; border-radius: var(--radius-md);
+  padding: 10px 16px; font-size: 13px; z-index: 200;
+  display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 16px rgba(0,0,0,.2);
+  opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none; white-space: nowrap;
+}
+.notif-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
+.notif-toast-btn { background: var(--blue); color: #fff; border: none; border-radius: 6px; padding: 4px 10px; font-size: 12px; cursor: pointer; font-family: inherit; }
 
 /* ── 공통 모달 ── */
 .modal-overlay {
@@ -356,6 +371,7 @@ body {
         <div class="menu-item-title">1:1 채팅 목록</div>
         <div class="menu-item-sub">개인 메시지</div>
       </div>
+      <span class="notif-badge" id="dmBadge"></span>
       <span class="menu-arrow">›</span>
     </button>
   </div>
@@ -428,6 +444,12 @@ body {
   </div>
 </div>
 
+<!-- DM 수신 토스트 -->
+<div class="notif-toast" id="dmToast">
+  <span id="dmToastText"></span>
+  <button class="notif-toast-btn" onclick="goToDmFromToast()">확인</button>
+</div>
+
 <!-- 상대방 프로필 모달 -->
 <div class="modal-overlay" id="partnerModal" onclick="closePartnerModal(event)">
   <div class="modal-sheet" onclick="event.stopPropagation()">
@@ -452,6 +474,8 @@ let editAvatarData = '';
 let modalTarget = null;
 let presenceDocRef = null;
 let unsubPresence = null;
+let unsubInbox = null;
+let dmBadgeCount = 0;
 
 // ── 시작 시 프로필 확인 ──────────────────────────────────
 window.addEventListener('load', () => {
@@ -608,6 +632,8 @@ function showMenu() {
   document.getElementById('dongMenuTitle').textContent = dong + ' 톡방';
   renderMyAvatarBtn();
   showScreen('menuScreen');
+  if (window._firebaseReady) subscribeInbox();
+  else document.addEventListener('firebaseReady', subscribeInbox, { once: true });
 }
 
 function renderMyAvatarBtn() {
@@ -706,7 +732,75 @@ function enterDM(partnerNick, partnerAvatarData, partnerGender) {
   closePartnerModal();
   const dmId = 'dm_' + [profile.nickname, partnerNick].sort().join('__');
   saveDmToList({ id: dmId, partnerNick, partnerAvatar: partnerAvatarData, partnerGender });
+  // 상대방 수신함에 알림 기록
+  if (window._firebaseReady) {
+    const inboxRef = window._doc(window._db, 'users', partnerNick, 'inbox', dmId);
+    window._setDoc(inboxRef, {
+      dmId, partnerNick: profile.nickname,
+      partnerAvatar: profile.avatar || '',
+      partnerGender: profile.gender,
+      ts: new Date()
+    }).catch(() => {});
+  }
   enterChat(dmId, partnerNick, '1:1 채팅', '', 'dmListScreen', true);
+}
+
+// ── 수신함 구독 ──────────────────────────────────────────
+let toastDmId = null;
+let toastTimer = null;
+
+function subscribeInbox() {
+  if (unsubInbox) { unsubInbox(); unsubInbox = null; }
+  if (!window._firebaseReady || !profile) return;
+  const inboxRef = window._collection(window._db, 'users', profile.nickname, 'inbox');
+  let firstSnap = true;
+  unsubInbox = window._onSnapshot(inboxRef, snap => {
+    if (firstSnap) { firstSnap = false; return; } // 기존 항목 무시
+    snap.docChanges().forEach(ch => {
+      if (ch.type !== 'added') return;
+      const d = ch.doc.data();
+      // 이미 내가 보낸 DM이면 무시
+      if (d.partnerNick === profile.nickname) return;
+      saveDmToList({ id: d.dmId, partnerNick: d.partnerNick, partnerAvatar: d.partnerAvatar, partnerGender: d.partnerGender });
+      // 현재 그 DM방에 있으면 토스트 생략
+      if (currentRoom?.id === d.dmId) return;
+      dmBadgeCount++;
+      updateDmBadge();
+      showDmToast(d.partnerNick, d.dmId);
+    });
+  });
+}
+
+function updateDmBadge() {
+  const badge = document.getElementById('dmBadge');
+  if (!badge) return;
+  if (dmBadgeCount > 0) {
+    badge.textContent = dmBadgeCount;
+    badge.classList.add('show');
+  } else {
+    badge.classList.remove('show');
+  }
+}
+
+function showDmToast(fromNick, dmId) {
+  toastDmId = dmId;
+  document.getElementById('dmToastText').textContent = fromNick + '님이 1:1 채팅을 요청했어요';
+  const toast = document.getElementById('dmToast');
+  toast.classList.add('show');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 5000);
+}
+
+function goToDmFromToast() {
+  document.getElementById('dmToast').classList.remove('show');
+  if (!toastDmId) return;
+  const list = getDmList();
+  const dm = list.find(d => d.id === toastDmId);
+  if (dm) {
+    dmBadgeCount = 0; updateDmBadge();
+    enterChat(dm.id, dm.partnerNick, '1:1 채팅', '', 'dmListScreen', true);
+  }
+  toastDmId = null;
 }
 
 // ── Presence (접속자 수) ──────────────────────────────────
@@ -793,6 +887,7 @@ function saveDmToList(dm) {
   localStorage.setItem('dnTalk_dms', JSON.stringify(list));
 }
 function showDmList() {
+  dmBadgeCount = 0; updateDmBadge();
   const list = getDmList();
   const el = document.getElementById('dmList');
   if (list.length === 0) {
