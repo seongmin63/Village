@@ -434,7 +434,7 @@ body {
       <div class="warn-text" style="margin-bottom:12px">⚠️ 프로필 변경 시 모든 채팅 기록이 초기화됩니다</div>
       <div class="edit-form">
         <div class="edit-avatar-wrap">
-          <div class="edit-avatar-preview" id="editAvatarPreview" onclick="document.getElementById('editAvatarInput').click()">
+          <div class="edit-avatar-preview" id="editAvatarPreview">
             <span id="editAvatarEmoji">📷</span>
           </div>
           <div style="display:flex;gap:8px;margin-top:4px">
@@ -1200,6 +1200,7 @@ function autoResize(el) { el.style.height = 'auto'; el.style.height = Math.min(e
 function goBack() {
   leavePresence();
   if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+  currentRoom = null;
   lastDate = '';
   if (chatBackTarget === 'dmListScreen') showDmList();
   else showMenu();
