@@ -1028,7 +1028,14 @@ function enterChat(roomId, title, sub, badge, backTarget, isDM = false) {
 
   const connect = () => {
     const colRef = window._collection(window._db, 'rooms', roomId, 'messages');
-    const q = window._query(colRef, window._orderBy('ts'), window._limit(100));
+    // DM은 프로필 리셋 시점 이후 메시지만 Firestore 쿼리 레벨에서 필터링
+    const dmInfo = isDM ? getDmList().find(d => d.id === roomId) : null;
+    const cutoff = isDM
+      ? new Date(Math.max(profileResetTime.getTime(), dmInfo?.startFrom || 0))
+      : new Date(profileResetTime.getTime());
+    const q = isDM
+      ? window._query(colRef, window._where('ts', '>=', cutoff), window._orderBy('ts'), window._limit(100))
+      : window._query(colRef, window._orderBy('ts'), window._limit(100));
 
     const renderedIds = new Set();
     let initialSnapDone = false;
@@ -1037,13 +1044,6 @@ function enterChat(roomId, title, sub, badge, backTarget, isDM = false) {
       if (!initialSnapDone) {
         initialSnapDone = true;
         el.innerHTML = ''; lastDate = '';
-        // DM인 경우 상대방의 프로필 초기화 시점도 반영해 이전 메시지 숨김
-        const dmInfo = isDM ? getDmList().find(d => d.id === roomId) : null;
-        const cutoff = new Date(Math.max(profileResetTime.getTime(), dmInfo?.startFrom || 0));
-        snap.docs.forEach(doc => {
-          const msgTs = doc.data().ts?.toDate?.() || new Date(0);
-          if (msgTs < cutoff) renderedIds.add(doc.id);
-        });
         // DM만 입장 메시지 표시
         if (isDM) {
           window._addDoc(colRef, { type:'system', text: profile.nickname + '님이 입장했습니다', ts: new Date() });
