@@ -604,35 +604,43 @@ function resetLocUI() {
 // ── 위치 요청 ────────────────────────────────────────────
 function requestLocation() {
   if (!navigator.geolocation) { showLocError('이 브라우저는 위치 기능을 지원하지 않아요.'); return; }
-  navigator.geolocation.getCurrentPosition(onLocSuccess, onLocError, { timeout: 10000, maximumAge: 60000 });
+  navigator.geolocation.getCurrentPosition(onLocSuccess, onLocError, {
+    timeout: 20000, maximumAge: 300000, enableHighAccuracy: false
+  });
 }
 
 async function onLocSuccess(pos) {
   const { latitude: lat, longitude: lng } = pos.coords;
   document.getElementById('locTitle').textContent = '동네를 찾는 중...';
-  try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 8000);
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=ko&zoom=16`,
-      { headers: { 'User-Agent': 'SeoulChat/1.0', 'Accept-Language': 'ko' }, signal: controller.signal }
-    );
-    clearTimeout(timer);
-    const data = await res.json();
-    const addr = data.address || {};
-    // 시/군/구: city_district(구) > county(군/시) > city > town
-    const gu = addr.city_district || addr.borough || addr.county || addr.city || addr.town || '알 수 없는 구';
-    // 읍/면/동: neighbourhood > quarter > suburb > village > town
-    const dong = addr.neighbourhood || addr.quarter || addr.suburb || addr.village || addr.town || '알 수 없는 동';
-    currentLocation = { gu, dong };
-    showMenu();
-  } catch(e) {
-    showLocError('주소를 가져오는 데 실패했어요.\n잠시 후 다시 시도해 주세요.');
+  // Nominatim → 실패 시 BigDataHub 스타일 fallback 없이 에러 표시
+  for (const zoom of [16, 14, 12]) {
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=ko&zoom=${zoom}&addressdetails=1`
+      );
+      if (!res.ok) continue;
+      const data = await res.json();
+      const addr = data.address || {};
+      // 시/군/구 (1단계): city_district(구) > county(군/시) > city > municipality
+      const gu = addr.city_district || addr.borough || addr.county || addr.city || addr.municipality || addr.state_district || '알 수 없는 구';
+      // 읍/면/동 (2단계): neighbourhood > quarter > suburb > village > town > hamlet
+      const dong = addr.neighbourhood || addr.quarter || addr.suburb || addr.village || addr.town || addr.hamlet || '알 수 없는 동';
+      if (gu && dong) {
+        currentLocation = { gu, dong };
+        showMenu();
+        return;
+      }
+    } catch(e) { /* 다음 zoom 시도 */ }
   }
+  showLocError('주소를 가져오는 데 실패했어요.\n잠시 후 다시 시도해 주세요.');
 }
 
 function onLocError(err) {
-  const msgs = { 1:'위치 권한이 거부됐어요.\n\n브라우저 주소창 왼쪽 🔒 아이콘 → 위치 → 허용\n으로 변경 후 새로고침해 주세요.', 2:'현재 위치를 가져올 수 없어요.', 3:'위치 요청 시간이 초과됐어요.' };
+  const msgs = {
+    1: '위치 권한이 거부됐어요.\n\n브라우저 주소창 왼쪽 🔒 아이콘 → 위치 → 허용\n으로 변경 후 새로고침해 주세요.',
+    2: '위치를 가져올 수 없어요.\n\n휴대폰 설정 → 위치 서비스가 켜져 있는지 확인해 주세요.',
+    3: '위치 요청 시간이 초과됐어요.\n새로고침 후 다시 시도해 주세요.'
+  };
   showLocError(msgs[err.code] || '알 수 없는 오류가 발생했어요.');
 }
 
