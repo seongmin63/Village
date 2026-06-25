@@ -196,9 +196,9 @@ body {
 .dm-action-btn.muted { color: var(--c-muted); }
 .dm-empty { text-align: center; color: var(--c-muted); font-size: 14px; padding: 3rem 1rem; }
 .chat-left-banner {
-  background: #f3f4f6; border-bottom: 1px solid var(--c-border);
-  text-align: center; font-size: 12px; color: var(--c-muted);
-  padding: 8px 14px; flex-shrink: 0;
+  background: #fff3cd; border-bottom: 1px solid #f0c040;
+  text-align: center; font-size: 12px; color: #7a5c00;
+  padding: 8px 14px; flex-shrink: 0; font-weight: 500;
 }
 
 /* ── 채팅 화면 ── */
@@ -815,10 +815,11 @@ async function enterDM(partnerNick, partnerAvatarData, partnerGender) {
   const myId = profile.profileId || profile.nickname;
   const theirId = partnerProfileId || partnerNick;
   const dmId = 'dm_' + [myId, theirId].sort().join('__');
-  clearLeftMark(dmId);
+  const partnerLeft = getLeftDms().includes(dmId);
   saveDmToList({ id: dmId, partnerNick, partnerAvatar: partnerAvatarData, partnerGender });
   subscribeDmRooms();
-  if (window._firebaseReady) {
+  // 상대가 나가지 않은 경우에만 초대 알림 전송
+  if (!partnerLeft && window._firebaseReady) {
     const inboxRef = window._doc(window._db, 'users', partnerNick, 'inbox', dmId);
     window._setDoc(inboxRef, {
       dmId, partnerNick: profile.nickname,
@@ -851,7 +852,6 @@ function subscribeInbox() {
         } else if (d.dmId && d.partnerNick && d.partnerNick !== profile.nickname) {
           const existing = getDmList().find(dm => dm.id === d.dmId);
           if (!existing) {
-            clearLeftMark(d.dmId);
             saveDmToList({ id: d.dmId, partnerNick: d.partnerNick, partnerAvatar: d.partnerAvatar, partnerGender: d.partnerGender });
             changed = true;
           }
@@ -868,21 +868,10 @@ function subscribeInbox() {
         markPartnerLeft(d.dmId);
         window._deleteDoc(ch.doc.ref).catch(() => {});
         if (document.getElementById('dmListScreen').classList.contains('active')) showDmList();
-        if (currentRoom?.id === d.dmId) {
-          const existing = document.getElementById('chatLeftBanner');
-          if (!existing) {
-            const banner = document.createElement('div');
-            banner.id = 'chatLeftBanner';
-            banner.className = 'chat-left-banner';
-            banner.textContent = '상대방이 채팅방을 나갔습니다';
-            const msgs = document.getElementById('messages');
-            msgs.parentNode.insertBefore(banner, msgs);
-          }
-        }
+        if (currentRoom?.id === d.dmId) showLeftBanner();
         return;
       }
       if (d.partnerNick === profile.nickname) return;
-      clearLeftMark(d.dmId);
       saveDmToList({ id: d.dmId, partnerNick: d.partnerNick, partnerAvatar: d.partnerAvatar, partnerGender: d.partnerGender });
       subscribeDmRooms();
     });
@@ -1028,17 +1017,13 @@ function enterChat(roomId, title, sub, badge, backTarget, isDM = false) {
   document.getElementById('onlineCount').textContent = '';
   if (isDM) { clearDmUnread(roomId); updateDmBadge(); }
   document.getElementById('messages').innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div>';
+  // 입력창 초기화
+  lockDmInput(false);
   // 상대방 나감 배너
   const existingBanner = document.getElementById('chatLeftBanner');
   if (existingBanner) existingBanner.remove();
-  if (isDM && getLeftDms().includes(roomId)) {
-    const banner = document.createElement('div');
-    banner.id = 'chatLeftBanner';
-    banner.className = 'chat-left-banner';
-    banner.textContent = '상대방이 채팅방을 나갔습니다';
-    document.getElementById('chatScreen').insertBefore(banner, document.getElementById('messages'));
-  }
   showScreen('chatScreen');
+  if (isDM && getLeftDms().includes(roomId)) showLeftBanner();
 
   const connect = () => {
     const colRef = window._collection(window._db, 'rooms', roomId, 'messages');
@@ -1053,7 +1038,7 @@ function enterChat(roomId, title, sub, badge, backTarget, isDM = false) {
       if (!initialSnapDone) {
         initialSnapDone = true;
         el.innerHTML = ''; lastDate = '';
-        if (isDM) {
+        if (isDM && snap.empty) {
           window._addDoc(colRef, { type:'system', text: profile.nickname + '님이 입장했습니다', ts: new Date() });
         }
       }
@@ -1088,11 +1073,33 @@ function markPartnerLeft(dmId) {
 function clearLeftMark(dmId) {
   const left = getLeftDms().filter(id => id !== dmId);
   localStorage.setItem('dnTalk_left', JSON.stringify(left));
-  // 채팅방 배너도 즉시 제거
   if (currentRoom?.id === dmId) {
     const banner = document.getElementById('chatLeftBanner');
     if (banner) banner.remove();
+    lockDmInput(false);
   }
+}
+
+function lockDmInput(locked) {
+  const input = document.getElementById('msgInput');
+  const btn = document.getElementById('sendBtn');
+  input.disabled = locked;
+  btn.disabled = locked;
+  input.placeholder = locked
+    ? '메시지를 보낼 수 없습니다'
+    : '메시지를 입력하세요...';
+}
+
+function showLeftBanner() {
+  const existing = document.getElementById('chatLeftBanner');
+  if (existing) { existing.textContent = '상대방이 채팅방을 나갔습니다 (상대가 다시 채팅방에 들어오면 대화가 가능합니다)'; return; }
+  const banner = document.createElement('div');
+  banner.id = 'chatLeftBanner';
+  banner.className = 'chat-left-banner';
+  banner.textContent = '상대방이 채팅방을 나갔습니다 (상대가 다시 채팅방에 들어오면 대화가 가능합니다)';
+  const msgs = document.getElementById('messages');
+  msgs.parentNode.insertBefore(banner, msgs);
+  lockDmInput(true);
 }
 function getMutedDms() { return JSON.parse(localStorage.getItem('dnTalk_mute') || '[]'); }
 function isMuted(dmId) { return getMutedDms().includes(dmId); }
