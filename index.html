@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <title>동네톡</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%2300704A'/%3E%3Cpath d='M11 65 L50 18 L89 65' stroke='white' stroke-width='6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='50' cy='50' r='17' fill='none' stroke='white' stroke-width='4'/%3E%3Cpath d='M50 33 L44 50 L50 44 L56 50 Z' fill='white'/%3E%3Cpath d='M50 67 L56 50 L50 56 L44 50 Z' fill='white' opacity='.35'/%3E%3Ccircle cx='38' cy='79' r='4' fill='white'/%3E%3Ccircle cx='50' cy='79' r='4' fill='white'/%3E%3Ccircle cx='62' cy='79' r='4' fill='white'/%3E%3C/svg%3E">
 
 <script type="module">
   import { initializeFirestore, collection, addDoc, setDoc, deleteDoc, getDocs, getDoc, doc, query, orderBy, onSnapshot, limit, where, enableNetwork, disableNetwork }
@@ -203,14 +204,13 @@ body {
 
 /* ── 광고 배너 ── */
 #adBanner { flex-shrink: 0; height: 80px; overflow: hidden; background: #fff0f3; }
-#adBanner a { display: block; height: 80px; }
 #adTrack { display: flex; height: 80px; transition: transform .6s ease; }
-#adTrack img { flex: 0 0 auto; height: 80px; object-fit: cover; object-position: center; }
+.ad-slide { flex: 0 0 auto; cursor: pointer; }
+.ad-slide img { height: 80px; width: 100%; object-fit: cover; object-position: center; display: block; }
 @media (min-width: 600px) {
   #adBanner { height: auto; }
-  #adBanner a { height: auto; }
   #adTrack { height: auto; }
-  #adTrack img { height: auto; max-height: 160px; object-fit: contain; background: #fff0f3; }
+  .ad-slide img { height: auto; max-height: 107px; object-fit: contain; background: #fff0f3; }
 }
 
 /* ── 채팅 화면 ── */
@@ -324,12 +324,52 @@ body {
   font-size: 30px; overflow: hidden; position: relative;
 }
 .edit-avatar-preview img { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; }
+
+/* ── 인트로 화면 ── */
+#introScreen { position: relative; overflow: hidden; background: #0d2e1a; }
+#introCanvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.intro-content {
+  position: relative; z-index: 2;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  height: 100%; gap: 16px; padding: 40px 24px; text-align: center;
+}
+.intro-logo-svg { width: 100px; height: 100px; filter: drop-shadow(0 4px 24px rgba(0,0,0,0.4)); }
+.intro-title { font-size: 36px; font-weight: 800; color: #fff; letter-spacing: -0.5px; margin: 0; }
+.intro-desc { font-size: 15px; color: rgba(255,255,255,0.82); line-height: 1.7; margin: 0; max-width: 280px; }
+.intro-btn {
+  margin-top: 8px; padding: 14px 40px; background: #fff; color: #00704A;
+  border: none; border-radius: 50px; font-size: 16px; font-weight: 700;
+  cursor: pointer; letter-spacing: 0.3px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+  transition: transform .15s, box-shadow .15s;
+}
+.intro-btn:active { transform: scale(0.97); box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
 </style>
 </head>
 <body>
 
+<!-- ⓪ 인트로 화면 -->
+<div id="introScreen" class="screen active">
+  <canvas id="introCanvas"></canvas>
+  <div class="intro-content">
+    <svg class="intro-logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="50" cy="50" r="50" fill="#00704A"/>
+      <path d="M11 65 L50 18 L89 65" stroke="white" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="50" cy="50" r="17" fill="none" stroke="white" stroke-width="4"/>
+      <path d="M50 33 L44 50 L50 44 L56 50 Z" fill="white"/>
+      <path d="M50 67 L56 50 L50 56 L44 50 Z" fill="white" opacity=".35"/>
+      <circle cx="38" cy="79" r="4" fill="white"/>
+      <circle cx="50" cy="79" r="4" fill="white"/>
+      <circle cx="62" cy="79" r="4" fill="white"/>
+    </svg>
+    <h1 class="intro-title">동네톡</h1>
+    <p class="intro-desc">우리 동네 이웃들과 실시간으로 대화해요.<br>위치 기반으로 가까운 사람들을 만나고<br>함께 소통하는 공간이에요.</p>
+    <button class="intro-btn" onclick="startIntro()">시작하기 →</button>
+  </div>
+</div>
+
 <!-- ① 프로필 설정 화면 -->
-<div id="profileScreen" class="screen active">
+<div id="profileScreen" class="screen">
   <div class="profile-card">
     <div>
       <h2>동네톡 시작하기</h2>
@@ -371,7 +411,17 @@ body {
 <div id="menuScreen" class="screen">
   <div class="menu-header">
     <div class="menu-header-left">
-      <div class="logo">동네톡</div>
+      <div class="logo">
+        <svg width="28" height="28" viewBox="0 0 100 100" style="display:inline-block;vertical-align:middle;margin-right:6px;flex-shrink:0">
+          <circle cx="50" cy="50" r="50" fill="#00704A"/>
+          <path d="M11 65 L50 18 L89 65" stroke="white" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="50" cy="50" r="17" fill="none" stroke="white" stroke-width="4"/>
+          <path d="M50 33 L44 50 L50 44 L56 50 Z" fill="white"/>
+          <path d="M50 67 L56 50 L50 56 L44 50 Z" fill="white" opacity=".35"/>
+          <circle cx="38" cy="79" r="4" fill="white"/>
+          <circle cx="50" cy="79" r="4" fill="white"/>
+          <circle cx="62" cy="79" r="4" fill="white"/>
+        </svg>동네톡</div>
       <div class="menu-location" id="menuLocation"></div>
     </div>
     <div class="my-avatar-btn" id="myAvatarBtn" onclick="openMyProfile()"></div>
@@ -426,12 +476,14 @@ body {
     <div id="onlineCount" style="font-size:12px;color:var(--c-muted);white-space:nowrap;margin-left:4px"></div>
   </div>
   <div id="adBanner" style="display:none">
-    <a href="https://oeeo.store/" target="_blank" rel="noopener" id="adLink">
-      <div id="adTrack">
+    <div id="adTrack">
+      <div class="ad-slide" onclick="window.open('https://oeeo.store/','_blank','noopener')">
         <img src="ad_oeeo.png" alt="oeeo strawberry">
+      </div>
+      <div class="ad-slide">
         <img src="ad_contact.png" alt="광고 문의">
       </div>
-    </a>
+    </div>
   </div>
   <div id="messages"><div class="loading-dots"><span></span><span></span><span></span></div></div>
   <div id="inputArea">
@@ -495,13 +547,136 @@ let unsubInbox = null;
 let dmBadgeCount = 0;
 let dmRoomSubs = {};
 
-// ── 시작 시 프로필 확인 ──────────────────────────────────
-window.addEventListener('load', () => {
+// ── 인트로 캔버스 애니메이션 ─────────────────────────────
+(function() {
+  const canvas = document.getElementById('introCanvas');
+  const ctx = canvas.getContext('2d');
+  let W, H, raf;
+  const particles = [];
+  const blades = [];
+
+  function resize() {
+    W = canvas.width = canvas.offsetWidth;
+    H = canvas.height = canvas.offsetHeight;
+  }
+
+  function initBlades() {
+    blades.length = 0;
+    const count = Math.floor(W / 8);
+    for (let i = 0; i < count; i++) {
+      blades.push({
+        x: (i / count) * W + Math.random() * (W / count),
+        baseH: H * (0.18 + Math.random() * 0.18),
+        sway: Math.random() * Math.PI * 2,
+        swaySpeed: 0.4 + Math.random() * 0.6,
+        width: 2 + Math.random() * 3,
+        hue: 110 + Math.random() * 40,
+        sat: 55 + Math.random() * 25,
+        lit: 22 + Math.random() * 18,
+      });
+    }
+  }
+
+  function initParticles() {
+    particles.length = 0;
+    for (let i = 0; i < 38; i++) {
+      particles.push({
+        x: Math.random() * W, y: Math.random() * H,
+        r: 1 + Math.random() * 2.5,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: -0.2 - Math.random() * 0.5,
+        alpha: 0.3 + Math.random() * 0.5,
+        pulse: Math.random() * Math.PI * 2,
+      });
+    }
+  }
+
+  function draw(t) {
+    ctx.clearRect(0, 0, W, H);
+
+    // sky gradient
+    const sky = ctx.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, '#071a0e');
+    sky.addColorStop(0.55, '#0d3320');
+    sky.addColorStop(1, '#154d2a');
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, W, H);
+
+    // moon glow
+    const mg = ctx.createRadialGradient(W * 0.75, H * 0.18, 0, W * 0.75, H * 0.18, H * 0.3);
+    mg.addColorStop(0, 'rgba(180,255,200,0.13)');
+    mg.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = mg;
+    ctx.fillRect(0, 0, W, H);
+
+    // grass blades
+    blades.forEach(b => {
+      b.sway += b.swaySpeed * 0.012;
+      const sw = Math.sin(b.sway) * 14;
+      ctx.beginPath();
+      ctx.moveTo(b.x, H);
+      ctx.quadraticCurveTo(b.x + sw * 0.5, H - b.baseH * 0.5, b.x + sw, H - b.baseH);
+      ctx.strokeStyle = `hsl(${b.hue},${b.sat}%,${b.lit}%)`;
+      ctx.lineWidth = b.width;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+    });
+
+    // foreground grass layer (darker, taller)
+    blades.forEach((b, i) => {
+      if (i % 3 !== 0) return;
+      const sw = Math.sin(b.sway * 0.8 + 1) * 10;
+      ctx.beginPath();
+      ctx.moveTo(b.x + 4, H);
+      ctx.quadraticCurveTo(b.x + 4 + sw * 0.4, H - b.baseH * 0.65, b.x + 4 + sw, H - b.baseH * 1.3);
+      ctx.strokeStyle = `hsl(${b.hue - 10},${b.sat - 10}%,${b.lit - 6}%)`;
+      ctx.lineWidth = b.width + 1;
+      ctx.stroke();
+    });
+
+    // firefly particles
+    particles.forEach(p => {
+      p.x += p.vx; p.y += p.vy; p.pulse += 0.04;
+      if (p.y < -10) { p.y = H + 5; p.x = Math.random() * W; }
+      if (p.x < -10) p.x = W + 5;
+      if (p.x > W + 10) p.x = -5;
+      const a = p.alpha * (0.6 + 0.4 * Math.sin(p.pulse));
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(180,255,160,${a})`;
+      ctx.fill();
+    });
+
+    raf = requestAnimationFrame(draw);
+  }
+
+  function start() {
+    resize();
+    initBlades();
+    initParticles();
+    draw(0);
+  }
+
+  window.addEventListener('resize', () => { resize(); initBlades(); });
+  start();
+
+  window._stopIntroAnim = () => { if (raf) cancelAnimationFrame(raf); };
+})();
+
+function startIntro() {
+  if (window._stopIntroAnim) window._stopIntroAnim();
   if (profile) {
     showScreen('locationScreen');
     resetLocUI();
     requestLocation();
+  } else {
+    showScreen('profileScreen');
   }
+}
+
+// ── 시작 시 프로필 확인 ──────────────────────────────────
+window.addEventListener('load', () => {
+  // 프로필 있어도 인트로는 항상 보여줌 (startIntro에서 분기)
 });
 
 // ── 탭/브라우저 종료 시 presence 정리 ────────────────────
@@ -1277,18 +1452,27 @@ let adTimer = null;
 let adIndex = 0;
 const AD_COUNT = 2;
 
+function resizeAdBanner() {
+  const banner = document.getElementById('adBanner');
+  if (!banner || banner.style.display === 'none') return;
+  const w = banner.offsetWidth;
+  const track = document.getElementById('adTrack');
+  track.querySelectorAll('.ad-slide').forEach(s => { s.style.width = w + 'px'; s.querySelector('img').style.width = w + 'px'; });
+  track.style.transition = 'none';
+  track.style.transform = `translateX(-${adIndex * w}px)`;
+  setTimeout(() => { track.style.transition = 'transform .6s ease'; }, 50);
+}
+window.addEventListener('resize', resizeAdBanner);
+
 function startAdBanner() {
   const banner = document.getElementById('adBanner');
   banner.style.display = '';
   adIndex = 0;
-  const w = banner.offsetWidth;
-  const track = document.getElementById('adTrack');
-  track.querySelectorAll('img').forEach(img => { img.style.width = w + 'px'; });
-  track.style.transform = 'translateX(0)';
+  resizeAdBanner();
   clearInterval(adTimer);
   adTimer = setInterval(() => {
     adIndex = (adIndex + 1) % AD_COUNT;
-    track.style.transform = `translateX(-${adIndex * w}px)`;
+    resizeAdBanner();
   }, 6000);
 }
 
