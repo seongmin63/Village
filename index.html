@@ -46,16 +46,19 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
   --blue: #00704A;
-  --blue-l: #E8F5F0;
+  --blue-l: #d6efe5;
+  --blue-d: #004f35;
   --radius-sm: 8px;
   --radius-md: 14px;
   --radius-lg: 20px;
-  --c-bg: #f2f7f5;
+  --c-bg: #cfe6d8;
   --c-panel: #ffffff;
-  --c-border: rgba(0,80,50,.09);
+  --c-border: rgba(0,80,50,.13);
   --c-text: #1a1a1a;
-  --c-muted: #6b7280;
-  --c-input: #f0f7f4;
+  --c-muted: #4a6b57;
+  --c-input: #eaf4ef;
+  --c-topbar: #005038;
+  --c-topbar-text: #ffffff;
 }
 body {
   font-family: 'Apple SD Gothic Neo','Noto Sans KR',sans-serif;
@@ -71,16 +74,17 @@ body {
 
 /* ── 공통 헤더 ── */
 .top-bar {
-  background: var(--c-panel);
-  border-bottom: 1px solid var(--c-border);
+  background: var(--c-topbar);
+  border-bottom: none;
   height: 54px;
   display: flex; align-items: center;
   padding: 0 1rem; gap: 10px; flex-shrink: 0;
 }
-.top-bar .logo { font-size: 18px; font-weight: 700; color: var(--blue); letter-spacing: -0.5px; }
-.top-bar .room-title { font-size: 15px; font-weight: 600; }
-.top-bar .room-sub { font-size: 11px; color: var(--c-muted); }
-.back-btn { background: none; border: none; font-size: 22px; cursor: pointer; color: var(--c-text); padding: 4px 8px 4px 0; line-height: 1; }
+.top-bar .logo { font-size: 18px; font-weight: 700; color: #fff; letter-spacing: -0.5px; }
+.top-bar .room-title { font-size: 15px; font-weight: 600; color: #fff; }
+.top-bar .room-sub { font-size: 11px; color: rgba(255,255,255,0.7); }
+.back-btn { background: none; border: none; font-size: 22px; cursor: pointer; color: rgba(255,255,255,0.9); padding: 4px 8px 4px 0; line-height: 1; }
+#onlineCount { color: rgba(255,255,255,0.8) !important; }
 
 /* ── 프로필 설정 화면 ── */
 #profileScreen { align-items: center; justify-content: flex-start; overflow-y: auto; padding: 1.5rem 1rem 2rem; }
@@ -138,21 +142,21 @@ body {
 /* ── 메인 메뉴 화면 ── */
 #menuScreen { overflow-y: auto; }
 .menu-header {
-  background: var(--c-panel); border-bottom: 1px solid var(--c-border);
+  background: var(--c-topbar); border-bottom: none;
   padding: 1rem 1rem 0.8rem; flex-shrink: 0;
   display: flex; align-items: center; justify-content: space-between;
 }
-.menu-header-left .logo { font-size: 20px; font-weight: 700; color: var(--blue); }
-.menu-location { font-size: 13px; color: var(--c-muted); margin-top: 2px; }
+.menu-header-left .logo { font-size: 20px; font-weight: 700; color: #fff; }
+.menu-location { font-size: 13px; color: rgba(255,255,255,0.75); margin-top: 2px; }
 .my-avatar-btn {
   width: 40px; height: 40px; border-radius: 50%;
-  overflow: hidden; background: var(--c-input);
+  overflow: hidden; background: rgba(255,255,255,0.2);
   display: flex; align-items: center; justify-content: center;
   font-size: 14px; font-weight: 700; color: #fff;
-  cursor: pointer; border: 2px solid var(--c-border);
+  cursor: pointer; border: 2px solid rgba(255,255,255,0.35);
   flex-shrink: 0; transition: border-color .15s;
 }
-.my-avatar-btn:hover { border-color: var(--blue); }
+.my-avatar-btn:hover { border-color: rgba(255,255,255,0.7); }
 .my-avatar-btn img { width: 100%; height: 100%; object-fit: cover; }
 .menu-list { padding: 1rem; display: flex; flex-direction: column; gap: 10px; }
 .menu-item {
@@ -162,7 +166,7 @@ body {
   cursor: pointer; text-align: left; width: 100%; font-family: inherit;
   transition: border-color .15s, box-shadow .15s;
 }
-.menu-item:hover { border-color: var(--blue); box-shadow: 0 2px 8px rgba(0,112,74,.1); }
+.menu-item:hover { border-color: var(--blue); box-shadow: 0 4px 12px rgba(0,80,56,.15); }
 .menu-icon { font-size: 28px; flex-shrink: 0; }
 .menu-item-body { flex: 1; }
 .menu-item-title { font-size: 15px; font-weight: 700; color: var(--c-text); }
@@ -203,22 +207,22 @@ body {
 }
 
 /* ── 광고 배너 ── */
-#adBanner { flex-shrink: 0; height: 80px; overflow: hidden; background: #fff0f3; }
-#adTrack { display: flex; height: 80px; transition: transform .6s ease; }
-.ad-slide { flex: 0 0 auto; cursor: pointer; }
+#adBanner { flex-shrink: 0; height: 80px; overflow: hidden; background: #e8f5ed; }
+#adTrack { display: flex; height: 80px; transition: transform .6s cubic-bezier(.4,0,.2,1); }
+.ad-slide { flex: 0 0 auto; cursor: pointer; background: #e8f5ed; }
 .ad-slide img { height: 80px; width: 100%; object-fit: cover; object-position: center; display: block; }
 @media (min-width: 600px) {
   #adBanner { height: auto; }
   #adTrack { height: auto; }
-  .ad-slide img { height: auto; max-height: 107px; object-fit: contain; background: #fff0f3; }
+  .ad-slide img { height: auto; max-height: 107px; object-fit: contain; background: #e8f5ed; }
 }
 
 /* ── 채팅 화면 ── */
 #chatScreen { flex: 1; overflow: hidden; }
 #chatScreen.active { display: flex; flex-direction: column; }
-#messages { flex: 1; overflow-y: auto; padding: 14px 14px 8px; display: flex; flex-direction: column; gap: 3px; }
+#messages { flex: 1; overflow-y: auto; padding: 14px 14px 8px; display: flex; flex-direction: column; gap: 3px; background: #e8f5ed; }
 #messages::-webkit-scrollbar { width: 4px; }
-#messages::-webkit-scrollbar-thumb { background: #ddd; border-radius: 4px; }
+#messages::-webkit-scrollbar-thumb { background: #a8d4b8; border-radius: 4px; }
 .msg-row { display: flex; align-items: flex-end; gap: 7px; }
 .msg-row.mine { flex-direction: row-reverse; }
 .avatar-sm {
@@ -232,34 +236,35 @@ body {
 .msg-row.mine .bubble-wrap { align-items: flex-end; }
 .bubble-meta { display: flex; align-items: center; gap: 5px; margin-bottom: 3px; padding-left: 2px; }
 .msg-row.mine .bubble-meta { display: none; }
-.meta-name { font-size: 12px; font-weight: 600; color: var(--c-text); }
+.meta-name { font-size: 12px; font-weight: 600; color: #2d4a38; }
 .meta-flag { font-size: 13px; margin-right: 3px; }
 .meta-gender { font-size: 10px; color: var(--c-muted); }
 .bubble {
   padding: 8px 12px; border-radius: 16px; font-size: 14px; line-height: 1.55;
-  word-break: break-word; background: var(--c-panel); border: 1px solid var(--c-border); color: var(--c-text);
+  word-break: break-word; background: #ffffff; border: 1px solid rgba(0,80,50,.1); color: var(--c-text);
+  box-shadow: 0 1px 3px rgba(0,60,30,.06);
 }
-.msg-row.mine .bubble { background: var(--blue); color: #fff; border-color: var(--blue); }
-.bubble-time { font-size: 10px; color: var(--c-muted); margin-top: 3px; padding: 0 2px; }
-.date-divider { text-align: center; font-size: 11px; color: var(--c-muted); margin: 10px 0; position: relative; }
-.date-divider::before, .date-divider::after { content:''; position: absolute; top: 50%; width: 28%; height: 1px; background: var(--c-border); }
+.msg-row.mine .bubble { background: #00704A; color: #fff; border-color: #005c3b; box-shadow: 0 1px 4px rgba(0,60,30,.2); }
+.bubble-time { font-size: 10px; color: #7a9e88; margin-top: 3px; padding: 0 2px; }
+.date-divider { text-align: center; font-size: 11px; color: #7a9e88; margin: 10px 0; position: relative; }
+.date-divider::before, .date-divider::after { content:''; position: absolute; top: 50%; width: 28%; height: 1px; background: #b8d9c5; }
 .date-divider::before { left: 0; }
 .date-divider::after { right: 0; }
 .system-msg {
-  text-align: center; font-size: 11px; color: var(--c-muted);
-  background: rgba(0,0,0,.04); padding: 3px 10px;
+  text-align: center; font-size: 11px; color: #5a8a6a;
+  background: rgba(0,80,50,.07); padding: 3px 10px;
   border-radius: 20px; align-self: center; margin: 4px 0;
 }
 #inputArea {
-  padding: 8px 12px 14px; border-top: 1px solid var(--c-border);
-  background: var(--c-panel); display: flex; gap: 8px; align-items: flex-end;
+  padding: 8px 12px 14px; border-top: 1px solid #b8d9c5;
+  background: #f0f9f4; display: flex; gap: 8px; align-items: flex-end;
 }
 #msgInput {
-  flex: 1; resize: none; border: 1px solid var(--c-border); border-radius: var(--radius-md);
+  flex: 1; resize: none; border: 1px solid #b8d9c5; border-radius: var(--radius-md);
   padding: 9px 12px; font-size: 14px; font-family: inherit;
-  background: var(--c-input); color: var(--c-text); outline: none; max-height: 100px; line-height: 1.5;
+  background: #fff; color: var(--c-text); outline: none; max-height: 100px; line-height: 1.5;
 }
-#msgInput:focus { border-color: var(--blue); background: #fff; }
+#msgInput:focus { border-color: var(--blue); }
 #sendBtn {
   width: 40px; height: 40px; background: var(--blue); color: #fff;
   border: none; border-radius: 50%; font-size: 18px; cursor: pointer; flex-shrink: 0;
@@ -267,11 +272,11 @@ body {
 }
 #sendBtn:disabled { opacity: .35; cursor: not-allowed; }
 .loading-dots { display: flex; gap: 4px; align-items: center; justify-content: center; padding: 16px; }
-.loading-dots span { width: 6px; height: 6px; background: var(--c-muted); border-radius: 50%; animation: dot .9s infinite; }
+.loading-dots span { width: 6px; height: 6px; background: #a0c8b0; border-radius: 50%; animation: dot .9s infinite; }
 .loading-dots span:nth-child(2) { animation-delay: .2s; }
 .loading-dots span:nth-child(3) { animation-delay: .4s; }
 @keyframes dot { 0%,80%,100%{opacity:.2} 40%{opacity:1} }
-.room-badge { margin-left: auto; font-size: 11px; color: var(--blue); background: var(--blue-l); padding: 3px 9px; border-radius: 20px; }
+.room-badge { margin-left: auto; font-size: 11px; color: rgba(255,255,255,0.9); background: rgba(255,255,255,0.2); padding: 3px 9px; border-radius: 20px; }
 .notif-badge {
   display: none; min-width: 18px; height: 18px; background: #E24B4A; color: #fff;
   border-radius: 20px; font-size: 11px; font-weight: 700; padding: 0 5px;
@@ -422,9 +427,13 @@ body {
     </div>
     <div class="field">
       <label data-i18n="profile_nationality_label">국적 *</label>
-      <select id="nationalityInput" class="nationality-select" onchange="checkReady()"></select>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span id="nationalityFlag" style="font-size:26px;flex-shrink:0;line-height:1">🇰🇷</span>
+        <select id="nationalityInput" class="nationality-select" onchange="updateNationalityFlag();checkReady()" style="flex:1"></select>
+      </div>
     </div>
     <button class="btn-primary" id="startBtn" data-i18n="profile_btn" onclick="goLocation()" disabled>Find My Neighborhood →</button>
+    <p style="font-size:11px;color:var(--c-muted);text-align:center;margin-top:-4px;line-height:1.5" data-i18n="data_note"></p>
   </div>
 </div>
 
@@ -559,7 +568,7 @@ if (profile && !profile.profileId) {
   profile.profileId = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   localStorage.setItem('dnTalk_profile', JSON.stringify(profile));
   document.addEventListener('firebaseReady', () => {
-    window._setDoc(window._doc(window._db, 'users', profile.nickname), { profileId: profile.profileId }).catch(() => {});
+    window._setDoc(window._doc(window._db, 'users', profile.nickname), { profileId: profile.profileId, lastSeen: new Date() }).catch(() => {});
   }, { once: true });
 }
 let currentLocation = { gu: '', dong: '' };
@@ -746,6 +755,12 @@ const STRINGS = {
     msg_placeholder:'Type a message...', menu_dm:'1:1 Chats', menu_dm_sub:'Personal messages',
     menu_gu_sub:'Chat with neighbors in your district', menu_dong_sub:'Chat with neighbors nearby',
     system_joined:' has joined', system_left:' has left the chat',
+    room_suffix:' Chat Room', dm_chat:'1:1 Chat', members:' online',
+    dm_empty:'No 1:1 chats yet.\nTap someone\'s profile in a chat room to start!',
+    partner_left:'The other person has left', msg_mine:'Me: ',
+    mute_on:'Mute', mute_off:'Unmute', leave_chat:'Leave chat',
+    data_note:'Inactive accounts are automatically deleted after 1 month.',
+    delete_confirm:'Deleting your profile will erase all chat history and return you to the start.\nAre you sure?',
   },
   ko: {
     app_name:'Village Talk',
@@ -758,6 +773,12 @@ const STRINGS = {
     msg_placeholder:'메시지를 입력하세요...', menu_dm:'1:1 채팅 목록', menu_dm_sub:'개인 메시지',
     menu_gu_sub:'구 전체 이웃과 대화해요', menu_dong_sub:'동네 이웃과 대화해요',
     system_joined:'님이 입장했습니다', system_left:'님이 채팅방을 나갔습니다',
+    room_suffix:' 톡방', dm_chat:'1:1 채팅', members:'명',
+    dm_empty:'아직 1:1 채팅이 없어요.\n채팅방에서 상대방 프로필을 눌러 시작해보세요!',
+    partner_left:'상대방이 채팅방을 나갔습니다', msg_mine:'나: ',
+    mute_on:'알림 끄기', mute_off:'알림 켜기', leave_chat:'채팅방 나가기',
+    data_note:'한 달간 활동이 없는 계정의 데이터는 자동으로 삭제됩니다.',
+    delete_confirm:'프로필을 삭제하면 모든 채팅 기록이 사라지고 초기 화면으로 돌아갑니다.\n정말 삭제하시겠어요?',
   },
   zh: {
     app_name:'Village Talk',
@@ -770,6 +791,12 @@ const STRINGS = {
     msg_placeholder:'输入消息...', menu_dm:'私聊列表', menu_dm_sub:'私人消息',
     menu_gu_sub:'与全区邻居聊天', menu_dong_sub:'与附近邻居聊天',
     system_joined:'已加入', system_left:'已离开聊天室',
+    room_suffix:'聊天室', dm_chat:'私聊', members:'人在线',
+    dm_empty:'还没有私聊。\n在聊天室点击对方头像开始吧！',
+    partner_left:'对方已离开聊天室', msg_mine:'我: ',
+    mute_on:'静音', mute_off:'取消静音', leave_chat:'退出聊天',
+    data_note:'一个月内没有活动的账户数据将自动删除。',
+    delete_confirm:'删除资料将清除所有聊天记录并返回初始界面。\n确定删除吗？',
   },
   ja: {
     app_name:'Village Talk',
@@ -782,6 +809,12 @@ const STRINGS = {
     msg_placeholder:'メッセージを入力...', menu_dm:'1:1チャット一覧', menu_dm_sub:'個人メッセージ',
     menu_gu_sub:'区全体の近所の人と話す', menu_dong_sub:'近くの近所の人と話す',
     system_joined:'さんが入室しました', system_left:'さんが退室しました',
+    room_suffix:'チャット', dm_chat:'1:1チャット', members:'人オンライン',
+    dm_empty:'まだ1:1チャットはありません。\nチャット室で相手のプロフィールをタップして始めましょう！',
+    partner_left:'相手がチャットから退出しました', msg_mine:'自分: ',
+    mute_on:'通知オフ', mute_off:'通知オン', leave_chat:'チャットを退出',
+    data_note:'1ヶ月間活動がないアカウントのデータは自動的に削除されます。',
+    delete_confirm:'プロフィールを削除するとすべてのチャット履歴が消え、最初の画面に戻ります。\n本当に削除しますか？',
   },
   es: {
     app_name:'Village Talk',
@@ -794,6 +827,12 @@ const STRINGS = {
     msg_placeholder:'Escribe un mensaje...', menu_dm:'Chats 1:1', menu_dm_sub:'Mensajes personales',
     menu_gu_sub:'Chatea con vecinos del distrito', menu_dong_sub:'Chatea con vecinos cercanos',
     system_joined:' se unió', system_left:' salió del chat',
+    room_suffix:' Chat', dm_chat:'Chat 1:1', members:' en línea',
+    dm_empty:'Aún no hay chats 1:1.\n¡Toca el perfil de alguien en una sala de chat para empezar!',
+    partner_left:'La otra persona ha salido del chat', msg_mine:'Yo: ',
+    mute_on:'Silenciar', mute_off:'Activar', leave_chat:'Salir del chat',
+    data_note:'Los datos de cuentas inactivas durante un mes se eliminarán automáticamente.',
+    delete_confirm:'Eliminar tu perfil borrará todo el historial de chat y te llevará al inicio.\n¿Estás seguro?',
   },
   fr: {
     app_name:'Village Talk',
@@ -806,6 +845,12 @@ const STRINGS = {
     msg_placeholder:'Tapez un message...', menu_dm:'Chats 1:1', menu_dm_sub:'Messages personnels',
     menu_gu_sub:'Discutez avec les voisins du quartier', menu_dong_sub:'Discutez avec les voisins proches',
     system_joined:' a rejoint', system_left:' a quitté le chat',
+    room_suffix:' Chat', dm_chat:'Chat 1:1', members:' en ligne',
+    dm_empty:'Pas encore de chat 1:1.\nAppuyez sur le profil de quelqu\'un dans une salle de chat pour commencer !',
+    partner_left:'L\'autre personne a quitté le chat', msg_mine:'Moi: ',
+    mute_on:'Muet', mute_off:'Activer', leave_chat:'Quitter le chat',
+    data_note:'Les données des comptes inactifs pendant un mois seront automatiquement supprimées.',
+    delete_confirm:'Supprimer votre profil effacera tout l\'historique de chat et vous ramènera au début.\nÊtes-vous sûr ?',
   },
   hi: {
     app_name:'Village Talk',
@@ -818,6 +863,12 @@ const STRINGS = {
     msg_placeholder:'संदेश टाइप करें...', menu_dm:'1:1 चैट सूची', menu_dm_sub:'व्यक्तिगत संदेश',
     menu_gu_sub:'जिले के पड़ोसियों से चैट करें', menu_dong_sub:'पास के पड़ोसियों से चैट करें',
     system_joined:' शामिल हुए', system_left:' चैट से चले गए',
+    room_suffix:' चैट', dm_chat:'1:1 चैट', members:' ऑनलाइन',
+    dm_empty:'अभी कोई 1:1 चैट नहीं है।\nचैट रूम में किसी की प्रोफ़ाइल टैप करके शुरू करें!',
+    partner_left:'दूसरा व्यक्ति चैट से चला गया', msg_mine:'मैं: ',
+    mute_on:'म्यूट', mute_off:'अनम्यूट', leave_chat:'चैट छोड़ें',
+    data_note:'एक महीने से निष्क्रिय खातों का डेटा स्वचालित रूप से हटा दिया जाएगा।',
+    delete_confirm:'प्रोफ़ाइल हटाने से सभी चैट इतिहास मिट जाएगा और शुरू में वापस आ जाएगा।\nक्या आप सुनिश्चित हैं?',
   },
   ar: {
     app_name:'Village Talk',
@@ -830,6 +881,12 @@ const STRINGS = {
     msg_placeholder:'اكتب رسالة...', menu_dm:'قائمة المحادثات', menu_dm_sub:'رسائل شخصية',
     menu_gu_sub:'تحدث مع جيران المنطقة', menu_dong_sub:'تحدث مع الجيران القريبين',
     system_joined:' انضم', system_left:' غادر الدردشة',
+    room_suffix:' دردشة', dm_chat:'محادثة 1:1', members:' متصل',
+    dm_empty:'لا توجد محادثات 1:1 بعد.\nاضغط على ملف شخصي في غرفة المحادثة للبدء!',
+    partner_left:'غادر الشخص الآخر المحادثة', msg_mine:'أنا: ',
+    mute_on:'كتم', mute_off:'إلغاء الكتم', leave_chat:'مغادرة المحادثة',
+    data_note:'سيتم حذف بيانات الحسابات غير النشطة لمدة شهر تلقائياً.',
+    delete_confirm:'سيؤدي حذف ملفك الشخصي إلى مسح جميع سجلات الدردشة والعودة إلى البداية.\nهل أنت متأكد؟',
   },
 };
 
@@ -846,9 +903,15 @@ function buildNationalitySelect(lang) {
     opt.textContent = c.v + ' ' + (c[lang] || c.en);
     sel.appendChild(opt);
   });
-  // 기존 선택 유지 또는 언어 기본값으로 설정
   sel.value = currentVal || LANG_DEFAULT_NATIONALITY[lang] || '🇰🇷';
   if (!sel.value) sel.selectedIndex = 0;
+  updateNationalityFlag();
+}
+
+function updateNationalityFlag() {
+  const sel = document.getElementById('nationalityInput');
+  const flag = document.getElementById('nationalityFlag');
+  if (sel && flag) flag.textContent = sel.value || '🌍';
 }
 
 function toggleLangMenu() {
@@ -998,11 +1061,13 @@ function goLocation() {
     resetLocUI();
     // Firestore: profileId 공개 + 이전 inbox 정리
     if (window._firebaseReady) {
-      window._setDoc(window._doc(window._db, 'users', nick), { profileId }).catch(() => {});
+      window._setDoc(window._doc(window._db, 'users', nick), { profileId, lastSeen: new Date() }).catch(() => {});
+      cleanupInactiveUsers();
       deleteMyInbox(nick);
     } else {
       document.addEventListener('firebaseReady', () => {
-        window._setDoc(window._doc(window._db, 'users', nick), { profileId }).catch(() => {});
+        window._setDoc(window._doc(window._db, 'users', nick), { profileId, lastSeen: new Date() }).catch(() => {});
+      cleanupInactiveUsers();
         deleteMyInbox(nick);
       }, { once: true });
     }
@@ -1030,7 +1095,7 @@ function requestLocation() {
 
 async function onLocSuccess(pos) {
   const { latitude: lat, longitude: lng } = pos.coords;
-  document.getElementById('locTitle').textContent = '동네를 찾는 중...';
+  document.getElementById('locTitle').textContent = t('loc_title');
   // Nominatim → 실패 시 BigDataHub 스타일 fallback 없이 에러 표시
   for (const zoom of [16, 14, 12]) {
     try {
@@ -1076,12 +1141,21 @@ function showLocError(msg) {
 function showMenu() {
   const { gu, dong } = currentLocation;
   document.getElementById('menuLocation').textContent = gu + ' · ' + dong;
-  document.getElementById('guMenuTitle').textContent = gu + ' 톡방';
-  document.getElementById('dongMenuTitle').textContent = dong + ' 톡방';
+  document.getElementById('guMenuTitle').textContent = gu + t('room_suffix');
+  document.getElementById('dongMenuTitle').textContent = dong + t('room_suffix');
   renderMyAvatarBtn();
   showScreen('menuScreen');
-  if (window._firebaseReady) { subscribeInbox(); subscribeDmRooms(); }
-  else document.addEventListener('firebaseReady', () => { subscribeInbox(); subscribeDmRooms(); }, { once: true });
+  if (window._firebaseReady) {
+    subscribeInbox(); subscribeDmRooms();
+    window._setDoc(window._doc(window._db, 'users', profile.nickname), { profileId: profile.profileId, lastSeen: new Date() }, { merge: true }).catch(() => {});
+    cleanupInactiveUsers();
+  } else {
+    document.addEventListener('firebaseReady', () => {
+      subscribeInbox(); subscribeDmRooms();
+      window._setDoc(window._doc(window._db, 'users', profile.nickname), { profileId: profile.profileId, lastSeen: new Date() }, { merge: true }).catch(() => {});
+      cleanupInactiveUsers();
+    }, { once: true });
+  }
 }
 
 function renderMyAvatarBtn() {
@@ -1117,8 +1191,22 @@ function closeMyProfile(e) {
 }
 
 function confirmDeleteProfile() {
-  if (!confirm('프로필을 삭제하면 모든 채팅 기록이 사라지고 초기 화면으로 돌아갑니다.\n정말 삭제하시겠어요?')) return;
+  if (!confirm(t('delete_confirm'))) return;
   deleteProfile();
+}
+
+async function cleanupInactiveUsers() {
+  if (!window._firebaseReady) return;
+  try {
+    const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const snap = await window._getDocs(
+      window._query(
+        window._collection(window._db, 'users'),
+        window._where('lastSeen', '<', cutoff)
+      )
+    );
+    snap.forEach(d => window._deleteDoc(d.ref).catch(() => {}));
+  } catch(e) {}
 }
 
 async function deleteMyInbox(nickname) {
@@ -1230,8 +1318,8 @@ function saveProfile() {
 // ── 그룹 채팅 입장 ────────────────────────────────────────
 function enterGroupChat(type) {
   const { gu, dong } = currentLocation;
-  if (type === 'gu') enterChat('gu_' + gu, gu + ' 톡방', '', gu, 'menuScreen');
-  else enterChat('dong_' + gu + '_' + dong, dong + ' 톡방', gu, gu + ' · ' + dong, 'menuScreen');
+  if (type === 'gu') enterChat('gu_' + gu, gu + t('room_suffix'), '', gu, 'menuScreen');
+  else enterChat('dong_' + gu + '_' + dong, dong + t('room_suffix'), gu, gu + ' · ' + dong, 'menuScreen');
 }
 
 // ── 1:1 채팅 입장 ────────────────────────────────────────
@@ -1252,7 +1340,7 @@ async function enterDM(partnerNick, partnerAvatarData, partnerGender) {
       ts: new Date()
     }).catch(() => {});
   }
-  enterChat(dmId, partnerNick, '1:1 채팅', '', 'dmListScreen', true);
+  enterChat(dmId, partnerNick, t('dm_chat'), '', 'dmListScreen', true);
 }
 
 // ── 수신함 구독 (새 DM 상대 추가 / 나감 알림) ────────────
@@ -1428,7 +1516,7 @@ function joinPresence(roomId) {
       return ts && (ts.toDate ? ts.toDate() : new Date(ts)) > cutoff;
     }).length;
     const el = document.getElementById('onlineCount');
-    if (el) el.textContent = '👥 ' + count + '명';
+    if (el) el.textContent = '👥 ' + count + t('members');
   });
 }
 
@@ -1581,13 +1669,13 @@ function showDmList() {
   const leftDms = getLeftDms();
   const el = document.getElementById('dmList');
   if (list.length === 0) {
-    el.innerHTML = '<div class="dm-empty">아직 1:1 채팅이 없어요.<br>채팅방에서 상대방 프로필을 눌러 시작해보세요!</div>';
+    el.innerHTML = '<div class="dm-empty">' + t('dm_empty').replace('\n','<br>') + '</div>';
   } else {
     el.innerHTML = '';
     list.forEach(dm => {
       const item = document.createElement('div');
       item.className = 'dm-item';
-      item.onclick = () => enterChat(dm.id, dm.partnerNick, '1:1 채팅', '', 'dmListScreen', true);
+      item.onclick = () => enterChat(dm.id, dm.partnerNick, t('dm_chat'), '', 'dmListScreen', true);
       const isLeft = leftDms.includes(dm.id);
       const muted = isMuted(dm.id);
       let avatarHtml = dm.partnerAvatar
@@ -1597,11 +1685,11 @@ function showDmList() {
       const lastMsg = getDmLastMsg(dm.id);
       let subText = '';
       if (isLeft) {
-        subText = `<div class="dm-item-left">상대방이 채팅방을 나갔습니다</div>`;
+        subText = `<div class="dm-item-left">${t('partner_left')}</div>`;
       } else if (lastMsg) {
         const preview = lastMsg.text.slice(0, 30) + (lastMsg.text.length > 30 ? '…' : '');
         const isMine = lastMsg.sender === profile.nickname;
-        subText = `<div class="dm-item-left">${isMine ? '나: ' : ''}${esc(preview)}</div>`;
+        subText = `<div class="dm-item-left">${isMine ? t('msg_mine') : ''}${esc(preview)}</div>`;
       }
       const muteIcon = muted ? '🔕' : '🔔';
       const unread = (getDmUnread()[dm.id] || 0);
@@ -1615,8 +1703,8 @@ function showDmList() {
           ${subText}
         </div>
         <div class="dm-item-actions">
-          <button class="dm-action-btn${muted?' muted':''}" title="${muted?'알림 켜기':'알림 끄기'}" onclick="toggleMute('${dm.id}',event)">${muteIcon}</button>
-          <button class="dm-action-btn" title="채팅방 나가기" onclick="leaveDm('${dm.id}','${esc(dm.partnerNick)}',event)">🚪</button>
+          <button class="dm-action-btn${muted?' muted':''}" title="${muted?t('mute_off'):t('mute_on')}" onclick="toggleMute('${dm.id}',event)">${muteIcon}</button>
+          <button class="dm-action-btn" title="${t('leave_chat')}" onclick="leaveDm('${dm.id}','${esc(dm.partnerNick)}',event)">🚪</button>
         </div>`;
       el.appendChild(item);
     });
@@ -1693,24 +1781,36 @@ function resizeAdBanner() {
   const banner = document.getElementById('adBanner');
   if (!banner || banner.style.display === 'none') return;
   const w = banner.offsetWidth;
+  if (!w) return;
   const track = document.getElementById('adTrack');
-  track.querySelectorAll('.ad-slide').forEach(s => { s.style.width = w + 'px'; s.querySelector('img').style.width = w + 'px'; });
+  track.querySelectorAll('.ad-slide').forEach(s => { s.style.width = w + 'px'; });
+  // 리사이즈 시: transition 없이 현재 슬라이드 위치 즉시 보정
   track.style.transition = 'none';
   track.style.transform = `translateX(-${adIndex * w}px)`;
-  setTimeout(() => { track.style.transition = 'transform .6s ease'; }, 50);
+  requestAnimationFrame(() => {
+    track.style.transition = 'transform .6s cubic-bezier(.4,0,.2,1)';
+  });
 }
 window.addEventListener('resize', resizeAdBanner);
+
+function slideAdBanner() {
+  const banner = document.getElementById('adBanner');
+  if (!banner || banner.style.display === 'none') return;
+  const w = banner.offsetWidth;
+  if (!w) return;
+  adIndex = (adIndex + 1) % AD_COUNT;
+  // transition은 CSS에 이미 적용되어 있으므로 transform만 바꾸면 슬라이드됨
+  document.getElementById('adTrack').style.transform = `translateX(-${adIndex * w}px)`;
+}
 
 function startAdBanner() {
   const banner = document.getElementById('adBanner');
   banner.style.display = '';
   adIndex = 0;
+  // 슬라이드 폭 세팅 (transition 없이)
   resizeAdBanner();
   clearInterval(adTimer);
-  adTimer = setInterval(() => {
-    adIndex = (adIndex + 1) % AD_COUNT;
-    resizeAdBanner();
-  }, 6000);
+  adTimer = setInterval(slideAdBanner, 6000);
 }
 
 function stopAdBanner() {
