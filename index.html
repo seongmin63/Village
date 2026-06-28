@@ -238,7 +238,7 @@ body {
 .bubble-meta { display: flex; align-items: center; gap: 5px; margin-bottom: 3px; padding-left: 2px; }
 .msg-row.mine .bubble-meta { display: none; }
 .meta-name { font-size: 12px; font-weight: 600; color: #2d4a38; }
-.meta-flag { font-size: 13px; margin-right: 3px; }
+.meta-flag { width: 18px; height: 13px; object-fit: cover; border-radius: 2px; flex-shrink: 0; }
 .meta-gender { font-size: 10px; color: var(--c-muted); }
 .bubble {
   padding: 8px 12px; border-radius: 16px; font-size: 14px; line-height: 1.55;
@@ -776,6 +776,8 @@ const COUNTRIES = [
 
 const LANG_FLAGS = {ko:'🇰🇷', en:'🇺🇸', zh:'🇨🇳', ja:'🇯🇵', es:'🇪🇸', fr:'🇫🇷', hi:'🇮🇳', ar:'🇸🇦'};
 const LANG_LOCALES = {ko:'ko-KR', en:'en-US', zh:'zh-CN', ja:'ja-JP', es:'es-ES', fr:'fr-FR', hi:'hi-IN', ar:'ar-SA'};
+const LANG_CDN = {ko:'kr', en:'us', zh:'cn', ja:'jp', es:'es', fr:'fr', hi:'in', ar:'sa'};
+const LANG_NATIVE = {ko:'한국어', en:'English', zh:'中文', ja:'日本語', es:'Español', fr:'Français', hi:'हिन्दी', ar:'العربية'};
 const LANG_DEFAULT_NATIONALITY = {ko:'🇰🇷', en:'🇺🇸', zh:'🇨🇳', ja:'🇯🇵', es:'🇪🇸', fr:'🇫🇷', hi:'🇮🇳', ar:'🇸🇦'};
 
 const STRINGS = {
@@ -928,14 +930,14 @@ const STRINGS = {
 // Patch: extra keys added across all languages
 ['en','ko','zh','ja','es','fr','hi','ar'].forEach(l => {
   const x = {
-    en:{ loc_finding:'Checking location...', delete_profile:'Delete Profile', close_btn:'Close', nick_taken:'This nickname is already taken. Please choose a different one.' },
-    ko:{ loc_finding:'위치를 확인하는 중...', delete_profile:'프로필 삭제', close_btn:'닫기', nick_taken:'이미 사용 중인 닉네임입니다. 다른 닉네임을 선택해주세요.' },
-    zh:{ loc_finding:'正在检查位置...', delete_profile:'删除资料', close_btn:'关闭', nick_taken:'该昵称已被使用，请选择其他昵称。' },
-    ja:{ loc_finding:'位置を確認中...', delete_profile:'プロフィール削除', close_btn:'閉じる', nick_taken:'このニックネームはすでに使用されています。別のニックネームを選んでください。' },
-    es:{ loc_finding:'Verificando ubicación...', delete_profile:'Eliminar perfil', close_btn:'Cerrar', nick_taken:'Este apodo ya está en uso. Por favor elige otro.' },
-    fr:{ loc_finding:'Vérification de la localisation...', delete_profile:'Supprimer le profil', close_btn:'Fermer', nick_taken:'Ce pseudo est déjà utilisé. Veuillez en choisir un autre.' },
-    hi:{ loc_finding:'स्थान जांच रहे हैं...', delete_profile:'प्रोफ़ाइल हटाएं', close_btn:'बंद करें', nick_taken:'यह उपनाम पहले से उपयोग में है। कृपया कोई अन्य उपनाम चुनें।' },
-    ar:{ loc_finding:'جارٍ التحقق من الموقع...', delete_profile:'حذف الملف الشخصي', close_btn:'إغلاق', nick_taken:'هذا الاسم المستعار مستخدم بالفعل. يرجى اختيار اسم آخر.' },
+    en:{ loc_finding:'Checking location...', delete_profile:'Delete Profile', close_btn:'Close', nick_taken:'This nickname is already taken. Please choose a different one.', menu_lang_gu_sub:'Same language · district chat', menu_lang_dong_sub:'Same language · neighborhood chat' },
+    ko:{ loc_finding:'위치를 확인하는 중...', delete_profile:'프로필 삭제', close_btn:'닫기', nick_taken:'이미 사용 중인 닉네임입니다. 다른 닉네임을 선택해주세요.', menu_lang_gu_sub:'같은 언어 · 구 단위 채팅', menu_lang_dong_sub:'같은 언어 · 동 단위 채팅' },
+    zh:{ loc_finding:'正在检查位置...', delete_profile:'删除资料', close_btn:'关闭', nick_taken:'该昵称已被使用，请选择其他昵称。', menu_lang_gu_sub:'同语言 · 区聊天室', menu_lang_dong_sub:'同语言 · 社区聊天室' },
+    ja:{ loc_finding:'位置を確認中...', delete_profile:'プロフィール削除', close_btn:'閉じる', nick_taken:'このニックネームはすでに使用されています。別のニックネームを選んでください。', menu_lang_gu_sub:'同言語 · 区チャット', menu_lang_dong_sub:'同言語 · 近所チャット' },
+    es:{ loc_finding:'Verificando ubicación...', delete_profile:'Eliminar perfil', close_btn:'Cerrar', nick_taken:'Este apodo ya está en uso. Por favor elige otro.', menu_lang_gu_sub:'Mismo idioma · chat de distrito', menu_lang_dong_sub:'Mismo idioma · chat de barrio' },
+    fr:{ loc_finding:'Vérification de la localisation...', delete_profile:'Supprimer le profil', close_btn:'Fermer', nick_taken:'Ce pseudo est déjà utilisé. Veuillez en choisir un autre.', menu_lang_gu_sub:'Même langue · chat de quartier', menu_lang_dong_sub:'Même langue · chat de voisinage' },
+    hi:{ loc_finding:'स्थान जांच रहे हैं...', delete_profile:'प्रोफ़ाइल हटाएं', close_btn:'बंद करें', nick_taken:'यह उपनाम पहले से उपयोग में है। कृपया कोई अन्य उपनाम चुनें।', menu_lang_gu_sub:'समान भाषा · जिला चैट', menu_lang_dong_sub:'समान भाषा · पड़ोस चैट' },
+    ar:{ loc_finding:'جارٍ التحقق من الموقع...', delete_profile:'حذف الملف الشخصي', close_btn:'إغلاق', nick_taken:'هذا الاسم المستعار مستخدم بالفعل. يرجى اختيار اسم آخر.', menu_lang_gu_sub:'نفس اللغة · دردشة المنطقة', menu_lang_dong_sub:'نفس اللغة · دردشة الحي' },
   }[l];
   if (STRINGS[l] && x) Object.assign(STRINGS[l], x);
 });
@@ -1066,6 +1068,8 @@ function setLang(code) {
     if (guEl) guEl.textContent = gu + t('room_suffix');
     if (dongEl) dongEl.textContent = dong + t('room_suffix');
   }
+  // 언어별 메뉴 아이템 갱신
+  renderLangMenuItems();
   // 그룹 채팅방 상단 제목 갱신
   if (currentRoom && !currentRoom.isDM && currentLocation) {
     const { gu, dong } = currentLocation;
@@ -1286,6 +1290,7 @@ function showMenu() {
   document.getElementById('menuLocation').textContent = gu + ' · ' + dong;
   document.getElementById('guMenuTitle').textContent = gu + t('room_suffix');
   document.getElementById('dongMenuTitle').textContent = dong + t('room_suffix');
+  renderLangMenuItems();
   renderMyAvatarBtn();
   showScreen('menuScreen');
   if (window._firebaseReady) {
@@ -1375,7 +1380,12 @@ function deleteProfile() {
   Object.values(dmRoomSubs).forEach(u => u());
   dmRoomSubs = {};
   leavePresence();
-  if (deletingNick) deleteMyInbox(deletingNick);
+  if (deletingNick) {
+    deleteMyInbox(deletingNick);
+    if (window._firebaseReady) {
+      window._deleteDoc(window._doc(window._db, 'users', deletingNick)).catch(() => {});
+    }
+  }
   ['dnTalk_profile','dnTalk_resetTime','dnTalk_dms','dnTalk_left',
    'dnTalk_unread','dnTalk_lastMsgs','dnTalk_mute','dnTalk_avatar'].forEach(k => localStorage.removeItem(k));
   profile = null;
@@ -1459,10 +1469,53 @@ function saveProfile() {
 }
 
 // ── 그룹 채팅 입장 ────────────────────────────────────────
+function getLangFlagHtml() {
+  const code = LANG_CDN[currentLang] || 'un';
+  return `<img src="https://flagcdn.com/20x15/${code}.png" alt="" style="width:20px;height:15px;object-fit:cover;border-radius:2px;vertical-align:middle;margin-right:4px;flex-shrink:0">`;
+}
+
+function renderLangMenuItems() {
+  document.querySelectorAll('.menu-item-lang').forEach(el => el.remove());
+  if (!currentLocation) return;
+  const { gu, dong } = currentLocation;
+  const list = document.querySelector('.menu-list');
+  const dmBtn = list ? list.querySelector('[onclick="showDmList()"]') : null;
+  if (!list || !dmBtn) return;
+  const cdnCode = LANG_CDN[currentLang] || 'un';
+  const langName = LANG_NATIVE[currentLang] || currentLang.toUpperCase();
+  const flagHtml = `<img src="https://flagcdn.com/20x15/${cdnCode}.png" alt="" style="width:20px;height:15px;object-fit:cover;border-radius:2px;vertical-align:middle;margin-right:5px;flex-shrink:0">`;
+  const globeSvg = `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>`;
+  [
+    { type:'gu_lang',   title: flagHtml + langName + ' · ' + gu + t('room_suffix'),   sub: t('menu_lang_gu_sub') },
+    { type:'dong_lang', title: flagHtml + langName + ' · ' + dong + t('room_suffix'), sub: t('menu_lang_dong_sub') }
+  ].forEach(({ type, title, sub }) => {
+    const btn = document.createElement('button');
+    btn.className = 'menu-item menu-item-lang';
+    btn.onclick = () => enterGroupChat(type);
+    btn.innerHTML = `
+      <span class="menu-icon" style="background:#eef4ff">${globeSvg}</span>
+      <div class="menu-item-body">
+        <div class="menu-item-title" style="display:flex;align-items:center">${title}</div>
+        <div class="menu-item-sub">${sub}</div>
+      </div>
+      <span class="menu-arrow">›</span>`;
+    list.insertBefore(btn, dmBtn);
+  });
+}
+
 function enterGroupChat(type) {
   const { gu, dong } = currentLocation;
-  if (type === 'gu') enterChat('gu_' + gu, gu + t('room_suffix'), '', gu, 'menuScreen');
-  else enterChat('dong_' + gu + '_' + dong, dong + t('room_suffix'), gu, gu + ' · ' + dong, 'menuScreen');
+  const cdnCode = LANG_CDN[currentLang] || 'un';
+  const langName = LANG_NATIVE[currentLang] || currentLang.toUpperCase();
+  const flagHtml = `<img src="https://flagcdn.com/20x15/${cdnCode}.png" alt="" style="width:20px;height:15px;object-fit:cover;border-radius:2px;vertical-align:middle;margin-right:4px">`;
+  if (type === 'gu')
+    enterChat('gu_' + gu, gu + t('room_suffix'), '', gu, 'menuScreen');
+  else if (type === 'dong')
+    enterChat('dong_' + gu + '_' + dong, dong + t('room_suffix'), gu, gu + ' · ' + dong, 'menuScreen');
+  else if (type === 'gu_lang')
+    enterChat('gu_' + gu + '_lang_' + currentLang, flagHtml + langName + ' · ' + gu + t('room_suffix'), '', gu, 'menuScreen');
+  else if (type === 'dong_lang')
+    enterChat('dong_' + gu + '_' + dong + '_lang_' + currentLang, flagHtml + langName + ' · ' + dong + t('room_suffix'), gu, gu + ' · ' + dong, 'menuScreen');
 }
 
 // ── 1:1 채팅 입장 ────────────────────────────────────────
@@ -1681,7 +1734,7 @@ function enterChat(roomId, title, sub, badge, backTarget, isDM = false) {
   currentRoom = { id: roomId, isDM };
   chatBackTarget = backTarget;
   lastDate = '';
-  document.getElementById('roomTitle').textContent = title;
+  document.getElementById('roomTitle').innerHTML = title;
   document.getElementById('roomSub').textContent = sub;
   document.getElementById('roomBadge').textContent = badge;
   document.getElementById('onlineCount').textContent = '';
@@ -1887,7 +1940,7 @@ function appendMsg(data) {
   row.innerHTML = `
     <div class="avatar-sm" ${avatarClick}>${avatarHtml}</div>
     <div class="bubble-wrap">
-      <div class="bubble-meta">${data.nationality ? `<span class="meta-flag">${data.nationality}</span>` : ''}<span class="meta-name">${esc(data.sender||'')}</span><span class="meta-gender">${genderLabel}</span></div>
+      <div class="bubble-meta">${data.nationality ? `<img class="meta-flag" src="https://flagcdn.com/18x13/${flagEmojiToCode(data.nationality)}.png" alt="${data.nationality}">` : ''}<span class="meta-name">${esc(data.sender||'')}</span><span class="meta-gender">${genderLabel}</span></div>
       <div class="bubble">${esc(data.text)}</div>
       <div class="bubble-time">${timeStr}</div>
     </div>`;
