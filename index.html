@@ -338,12 +338,12 @@ body {
 }
 .modal-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .boom-col { display:flex; flex-direction:column; gap:8px; }
-.boom-btn { display:flex; align-items:center; gap:6px; padding:7px 14px; border-radius:20px; border:1.5px solid; font-size:14px; font-weight:700; cursor:pointer; font-family:inherit; transition:background .15s,opacity .15s; }
-.boom-up { background:#eff6ff; border-color:#2563eb; color:#2563eb; }
-.boom-up.voted { background:#2563eb; color:#fff; }
-.boom-down { background:#fff5f5; border-color:#e74c3c; color:#e74c3c; }
-.boom-down.voted { background:#e74c3c; color:#fff; }
-.boom-btn:disabled { opacity:.45; cursor:default; }
+.boom-btn { display:flex; align-items:center; gap:5px; padding:6px 12px; border-radius:16px; border:1.5px solid; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit; transition:background .15s,opacity .15s; }
+.boom-up { background:rgba(0,112,74,0.08); border-color:rgba(0,112,74,0.25); color:#005038; }
+.boom-up.voted { background:rgba(0,112,74,0.18); border-color:#00704A; color:#003d28; font-weight:800; }
+.boom-down { background:rgba(100,100,100,0.07); border-color:rgba(100,100,100,0.2); color:#5a6b60; }
+.boom-down.voted { background:rgba(140,70,70,0.1); border-color:rgba(140,70,70,0.3); color:#7a3d3d; font-weight:800; }
+.boom-btn:disabled { opacity:.4; cursor:default; }
 .partner-bio { font-size:13px; color:var(--c-muted); text-align:center; line-height:1.5; min-height:0; word-break:break-all; width:100%; }
 .my-bio-wrap { width:100%; position:relative; }
 .my-bio-input { width:100%; resize:none; border:1.5px solid var(--c-border); border-radius:10px; padding:10px 12px; font-size:13px; font-family:inherit; color:var(--c-text); background:var(--c-input); box-sizing:border-box; line-height:1.5; min-height:60px; }
@@ -422,7 +422,7 @@ body {
 .about-header-title { color: #fff; font-size: 24px; font-weight: 800; letter-spacing: -0.3px; }
 .about-header-sub { color: rgba(255,255,255,0.8); font-size: 13px; margin-top: 4px; text-align: center; line-height: 1.5; }
 .about-body { width: 100%; max-width: 480px; margin: 0 auto; padding: 20px 16px 0; display: flex; flex-direction: column; gap: 14px; box-sizing: border-box; }
-.about-card { background: var(--c-panel); border-radius: 16px; padding: 18px 18px 16px; border: 1px solid var(--c-border); box-shadow: 0 2px 8px rgba(0,80,50,.06); }
+.about-card { background: rgba(255,255,255,0.6); border-radius: 16px; padding: 18px 18px 16px; border: 1px solid rgba(0,80,50,.12); box-shadow: 0 2px 8px rgba(0,80,50,.06); backdrop-filter: blur(4px); }
 .about-card-top { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
 .about-card-emoji { font-size: 26px; line-height: 1; flex-shrink: 0; }
 .about-card-title { font-size: 15px; font-weight: 700; color: #005038; }
@@ -653,7 +653,7 @@ body {
   </div>
   <div id="messages"><div class="loading-dots"><span></span><span></span><span></span></div></div>
   <div id="inputArea">
-    <textarea id="msgInput" placeholder="메시지를 입력하세요..." rows="1"
+    <textarea id="msgInput" data-i18n-ph="msg_placeholder" placeholder="메시지를 입력하세요..." rows="1"
       onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
     <button id="sendBtn" onclick="sendMsg()" aria-label="전송">➤</button>
   </div>
@@ -669,6 +669,7 @@ body {
       </div>
       <input type="file" id="avatarChangeInput" accept="image/*" style="display:none">
       <div class="modal-name" id="myViewName"></div>
+      <div id="myBoomRow" style="display:flex;gap:10px;opacity:.8"></div>
       <div class="my-bio-wrap">
         <textarea class="my-bio-input" id="myBioInput" maxlength="80" data-i18n-ph="bio_placeholder" placeholder="자기소개를 입력하세요 (최대 80자)" oninput="onBioInput(this)" onblur="saveBio()"></textarea>
         <div class="my-bio-counter"><span id="myBioCounter">0</span>/80</div>
@@ -688,7 +689,7 @@ body {
 <!-- 상대방 프로필 모달 -->
 <div class="modal-overlay" id="partnerModal" onclick="closePartnerModal(event)">
   <div class="modal-sheet" onclick="event.stopPropagation()">
-    <div style="display:flex;align-items:center;gap:14px;width:100%">
+    <div style="display:flex;align-items:center;justify-content:center;gap:14px;width:100%">
       <div class="modal-avatar" id="partnerAvatar" style="flex-shrink:0"></div>
       <div class="boom-col" id="boomCol">
         <button class="boom-btn boom-up" id="boomUpBtn" onclick="voteBoom('up')" disabled>
@@ -1561,9 +1562,22 @@ function requestLocation() {
   });
 }
 
-async function nominatimFetch(lat, lng, lang, zoom) {
+// 언어별 accept-language 체인: 선택 언어 → 영어 → 한국어 순으로 fallback
+// OpenStreetMap에 한국 지명 영어 로마자 표기는 거의 전부 있음
+const LANG_ACCEPT_CHAIN = {
+  ko: 'ko',
+  en: 'en,ko;q=0.5',
+  zh: 'zh,en;q=0.8,ko;q=0.5',
+  ja: 'ja,en;q=0.8,ko;q=0.5',
+  es: 'es,en;q=0.8,ko;q=0.5',
+  fr: 'fr,en;q=0.8,ko;q=0.5',
+  hi: 'hi,en;q=0.8,ko;q=0.5',
+  ar: 'ar,en;q=0.8,ko;q=0.5',
+};
+
+async function nominatimFetch(lat, lng, langChain, zoom) {
   const res = await fetch(
-    `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=${lang}&zoom=${zoom}&addressdetails=1`
+    `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=${encodeURIComponent(langChain)}&zoom=${zoom}&addressdetails=1`
   );
   if (!res.ok) return null;
   const data = await res.json();
@@ -1579,23 +1593,24 @@ async function onLocSuccess(pos) {
 
   for (const zoom of [16, 14, 12]) {
     try {
-      // 방 ID는 항상 한국어 기준 (여러 언어 사용자가 같은 방에 모이려면 일관된 키 필요)
+      // 방 ID는 항상 한국어 기준 (언어 달라도 같은 방에 모이도록)
       const ko = await nominatimFetch(lat, lng, 'ko', zoom);
       if (!ko) continue;
 
-      // 표시 이름: 선택 언어로 별도 fetch (한국어면 그대로)
+      // 표시 이름: 선택 언어 우선, 없으면 영어, 없으면 한국어 순으로 fallback
       let display = ko;
       if (currentLang !== 'ko') {
         try {
-          const loc = await nominatimFetch(lat, lng, currentLang, zoom);
+          const chain = LANG_ACCEPT_CHAIN[currentLang] || `${currentLang},en;q=0.8,ko;q=0.5`;
+          const loc = await nominatimFetch(lat, lng, chain, zoom);
           if (loc) display = loc;
         } catch(e) {}
       }
 
       currentLocation = {
-        gu:          ko.gu,       // 방 ID용 (항상 한국어)
+        gu:          ko.gu,
         dong:        ko.dong,
-        guDisplay:   display.gu,  // 화면 표시용 (선택 언어)
+        guDisplay:   display.gu,
         dongDisplay: display.dong,
       };
       showMenu();
@@ -1689,6 +1704,21 @@ function openMyProfile() {
   const bio = profile?.bio || '';
   bioInput.value = bio;
   document.getElementById('myBioCounter').textContent = bio.length;
+  // 붐 수치 표시 (읽기 전용)
+  const boomRow = document.getElementById('myBoomRow');
+  boomRow.innerHTML = '';
+  if (window._firebaseReady && profile?.nickname) {
+    window._getDoc(window._doc(window._db, 'users', profile.nickname)).then(snap => {
+      const d = snap.exists() ? snap.data() : {};
+      const up = d.boomUp || 0;
+      const down = d.boomDown || 0;
+      boomRow.innerHTML =
+        `<span style="display:flex;align-items:center;gap:4px;font-size:13px;font-weight:600;color:#005038;background:rgba(0,112,74,0.1);border:1.5px solid rgba(0,112,74,0.25);border-radius:14px;padding:4px 11px">` +
+        `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3H14z"/><path d="M7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3"/></svg>${up}</span>` +
+        `<span style="display:flex;align-items:center;gap:4px;font-size:13px;font-weight:600;color:#5a6b60;background:rgba(100,100,100,0.07);border:1.5px solid rgba(100,100,100,0.2);border-radius:14px;padding:4px 11px">` +
+        `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 15v4a3 3 0 003 3l4-9V2H5.72a2 2 0 00-2 1.7l-1.38 9a2 2 0 002 2.3H10z"/><path d="M17 2h2.67A2.31 2.31 0 0122 4v7a2.31 2.31 0 01-2.33 2H17"/></svg>${down}</span>`;
+    }).catch(() => {});
+  }
   document.getElementById('myProfileModal').classList.add('open');
 }
 
@@ -1843,8 +1873,8 @@ function renderLangMenuItems() {
   const cdnCode = LANG_CDN[currentLang] || 'un';
   const langName = LANG_NATIVE[currentLang] || currentLang.toUpperCase();
   const flagHtml = `<img src="https://flagcdn.com/${cdnCode}.svg" alt="" style="width:20px;height:15px;object-fit:cover;border-radius:2px;vertical-align:middle;margin-right:5px;flex-shrink:0">`;
-  const guLangSvg = `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#00704A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="12" height="10" rx="1.5"/><path d="M7 21l4-4h7a1 1 0 001-1V9a1 1 0 00-1-1h-4"/><line x1="6" y1="7" x2="11" y2="7"/><line x1="6" y1="10" x2="9" y2="10"/></svg>`;
-  const dongLangSvg = `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#00704A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/><path d="M8 20.5q4 1.5 8 0" stroke-dasharray="1.5 1.5"/></svg>`;
+  const guLangSvg = `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#00704A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="7" height="14" rx="1.2"/><rect x="9" y="3" width="9" height="18" rx="1.2"/><line x1="12" y1="7" x2="12" y2="7.1"/><line x1="15" y1="7" x2="15" y2="7.1"/><line x1="12" y1="11" x2="12" y2="11.1"/><line x1="15" y1="11" x2="15" y2="11.1"/><line x1="12" y1="15" x2="12" y2="15.1"/><line x1="15" y1="15" x2="15" y2="15.1"/><line x1="2" y1="21" x2="22" y2="21"/></svg>`;
+  const dongLangSvg = `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#00704A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5L12 4l9 7.5V21a1 1 0 01-1 1H4a1 1 0 01-1-1z"/><rect x="9" y="13" width="6" height="9" rx="1"/></svg>`;
   [
     { type:'gu_lang',   icon: guLangSvg,   title: flagHtml + langName + ' · ' + gd + t('room_suffix'),  sub: t('menu_lang_gu_sub') },
     { type:'dong_lang', icon: dongLangSvg, title: flagHtml + langName + ' · ' + dd + t('room_suffix'),  sub: t('menu_lang_dong_sub') }
@@ -1879,7 +1909,10 @@ function enterGroupChat(type) {
 }
 
 // ── 1:1 채팅 입장 ────────────────────────────────────────
+let dmMsgSent = false; // 현재 DM 세션에서 메시지 보냈는지 추적
+
 async function enterDM(partnerNick, partnerAvatarData, partnerGender, partnerNationality = '') {
+  dmMsgSent = false;
   closePartnerModal();
   // 닉네임 기반 고정 방 ID — 같은 두 사람은 항상 같은 방 사용
   const dmId = 'dm_' + [profile.nickname, partnerNick].sort().join('__');
@@ -2149,6 +2182,10 @@ function getDmList() { return JSON.parse(localStorage.getItem('dnTalk_dms') || '
 function saveDmToList(dm) {
   const list = getDmList().filter(d => d.id !== dm.id);
   list.unshift(dm);
+  localStorage.setItem('dnTalk_dms', JSON.stringify(list));
+}
+function removeDmFromList(dmId) {
+  const list = getDmList().filter(d => d.id !== dmId);
   localStorage.setItem('dnTalk_dms', JSON.stringify(list));
 }
 function getLeftDms() { return JSON.parse(localStorage.getItem('dnTalk_left') || '[]'); }
@@ -2602,6 +2639,7 @@ async function sendMsg() {
     sender: profile.nickname, gender: profile.gender,
     avatar: profile.avatar || '', nationality: profile.nationality || '', text, ts: new Date(),
   }).catch(err => alert('전송 오류: ' + err.message));
+  if (currentRoom?.isDM) dmMsgSent = true;
   input.value = ''; input.style.height = 'auto';
 }
 
@@ -2613,7 +2651,21 @@ function goBack() {
   leavePresence();
   stopAdBanner();
   if (unsubscribe) { unsubscribe(); unsubscribe = null; }
-  if (currentRoom?.isDM) { clearDmUnread(currentRoom.id); updateDmBadge(); }
+  if (currentRoom?.isDM) {
+    if (!dmMsgSent) {
+      // 메시지를 하나도 안 보낸 DM은 목록에서 제거
+      const dmId = currentRoom.id;
+      removeDmFromList(dmId);
+      // 상대방 inbox에 보낸 초대 알림도 삭제
+      if (window._firebaseReady && profile) {
+        const partnerNick = dmId.replace('dm_', '').split('__').find(n => n !== profile.nickname);
+        if (partnerNick) window._deleteDoc(window._doc(window._db, 'users', partnerNick, 'inbox', dmId)).catch(() => {});
+      }
+    } else {
+      clearDmUnread(currentRoom.id);
+      updateDmBadge();
+    }
+  }
   currentRoom = null;
   lastDate = '';
   if (chatBackTarget === 'dmListScreen') showDmList();
