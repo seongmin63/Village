@@ -717,9 +717,23 @@ body {
       <input type="file" id="avatarChangeInput" accept="image/*" style="display:none">
       <div class="modal-name" id="myViewName"></div>
       <div id="myBoomRow" style="display:flex;gap:10px;opacity:.8"></div>
-      <div class="my-bio-wrap">
-        <textarea class="my-bio-input" id="myBioInput" maxlength="80" data-i18n-ph="bio_placeholder" placeholder="자기소개를 입력하세요 (최대 80자)" oninput="onBioInput(this)" onblur="saveBio()"></textarea>
-        <div class="my-bio-counter"><span id="myBioCounter">0</span>/80</div>
+      <!-- 바이오 보기 모드 -->
+      <div class="my-bio-wrap" id="bioViewWrap" style="display:flex;align-items:center;gap:8px;justify-content:center">
+        <div id="myBioView" style="font-size:13px;color:var(--c-muted);text-align:center;line-height:1.5;word-break:break-all;flex:1"></div>
+        <button onclick="startBioEdit()" style="flex-shrink:0;background:none;border:none;cursor:pointer;padding:4px;color:var(--c-muted)" title="수정">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </button>
+      </div>
+      <!-- 바이오 수정 모드 -->
+      <div class="my-bio-wrap" id="bioEditWrap" style="display:none">
+        <textarea class="my-bio-input" id="myBioInput" maxlength="80" data-i18n-ph="bio_placeholder" placeholder="자기소개를 입력하세요 (최대 80자)" oninput="onBioInput(this)"></textarea>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
+          <div class="my-bio-counter"><span id="myBioCounter">0</span>/80</div>
+          <div style="display:flex;gap:6px">
+            <button onclick="cancelBioEdit()" style="font-size:12px;padding:3px 10px;border-radius:12px;border:1px solid var(--c-border);background:none;color:var(--c-muted);cursor:pointer;font-family:inherit" data-i18n="close_btn">취소</button>
+            <button onclick="saveBio()" style="font-size:12px;padding:3px 10px;border-radius:12px;border:none;background:var(--blue);color:#fff;cursor:pointer;font-family:inherit;font-weight:600" data-i18n="bio_save">완료</button>
+          </div>
+        </div>
       </div>
       <button class="btn-modal" onclick="confirmDeleteProfile()" style="background:#e74c3c" data-i18n="delete_profile">프로필 삭제</button>
       <button class="btn-modal secondary" onclick="closeMyProfile()" data-i18n="close_btn">닫기</button>
@@ -1116,14 +1130,14 @@ const STRINGS = {
 // intro_learn + bio_placeholder
 ['en','ko','zh','ja','es','fr','hi','ar'].forEach(l => {
   const x = {
-    en:{ intro_learn:'About Village Chat →', bio_placeholder:'Write a short intro about yourself (max 80 chars)' },
-    ko:{ intro_learn:'서비스 소개 →',         bio_placeholder:'자기소개를 입력하세요 (최대 80자)' },
-    zh:{ intro_learn:'了解更多 →',             bio_placeholder:'写一段关于自己的简介（最多80字）' },
-    ja:{ intro_learn:'サービス紹介 →',         bio_placeholder:'自己紹介を入力してください（最大80文字）' },
-    es:{ intro_learn:'Conoce más →',           bio_placeholder:'Escribe una breve introducción sobre ti (máx. 80 caracteres)' },
-    fr:{ intro_learn:'En savoir plus →',       bio_placeholder:'Écris une courte présentation de toi (max 80 caractères)' },
-    hi:{ intro_learn:'और जानें →',             bio_placeholder:'अपने बारे में एक छोटा परिचय लिखें (अधिकतम 80 अक्षर)' },
-    ar:{ intro_learn:'تعرف على المزيد →',      bio_placeholder:'اكتب مقدمة قصيرة عن نفسك (بحد أقصى 80 حرفاً)' },
+    en:{ intro_learn:'About Village Chat →', bio_placeholder:'Write a short intro about yourself (max 80 chars)', bio_save:'Done' },
+    ko:{ intro_learn:'서비스 소개 →',         bio_placeholder:'자기소개를 입력하세요 (최대 80자)',                 bio_save:'완료' },
+    zh:{ intro_learn:'了解更多 →',             bio_placeholder:'写一段关于自己的简介（最多80字）',                  bio_save:'完成' },
+    ja:{ intro_learn:'サービス紹介 →',         bio_placeholder:'自己紹介を入力してください（最大80文字）',           bio_save:'完了' },
+    es:{ intro_learn:'Conoce más →',           bio_placeholder:'Escribe una breve introducción sobre ti (máx. 80 caracteres)', bio_save:'Listo' },
+    fr:{ intro_learn:'En savoir plus →',       bio_placeholder:'Écris une courte présentation de toi (max 80 caractères)',     bio_save:'Terminé' },
+    hi:{ intro_learn:'और जानें →',             bio_placeholder:'अपने बारे में एक छोटा परिचय लिखें (अधिकतम 80 अक्षर)',        bio_save:'हो गया' },
+    ar:{ intro_learn:'تعرف على المزيد →',      bio_placeholder:'اكتب مقدمة قصيرة عن نفسك (بحد أقصى 80 حرفاً)',               bio_save:'تم' },
   }[l];
   if (STRINGS[l] && x) Object.assign(STRINGS[l], x);
 });
@@ -1988,6 +2002,21 @@ function onBioInput(el) {
   document.getElementById('myBioCounter').textContent = el.value.length;
 }
 
+function startBioEdit() {
+  const bio = profile?.bio || '';
+  const input = document.getElementById('myBioInput');
+  input.value = bio;
+  document.getElementById('myBioCounter').textContent = bio.length;
+  document.getElementById('bioViewWrap').style.display = 'none';
+  document.getElementById('bioEditWrap').style.display = '';
+  input.focus();
+}
+
+function cancelBioEdit() {
+  document.getElementById('bioEditWrap').style.display = 'none';
+  document.getElementById('bioViewWrap').style.display = 'flex';
+}
+
 function saveBio() {
   if (!profile) return;
   const bio = document.getElementById('myBioInput').value.trim();
@@ -1996,6 +2025,8 @@ function saveBio() {
   if (window._firebaseReady) {
     window._setDoc(window._doc(window._db, 'users', profile.nickname), { bio }, { merge: true }).catch(() => {});
   }
+  document.getElementById('myBioView').textContent = bio || '';
+  cancelBioEdit();
 }
 
 function openMyProfile() {
@@ -2010,10 +2041,10 @@ function openMyProfile() {
   const genderIcon = GENDER_SVG_LG[profile?.gender] || '';
   const myFlag = natFlagImg(profile?.nationality, 20, 15);
   document.getElementById('myViewName').innerHTML = (myFlag ? myFlag + ' ' : '') + esc(profile?.nickname || '') + (genderIcon ? ' ' + genderIcon : '');
-  const bioInput = document.getElementById('myBioInput');
   const bio = profile?.bio || '';
-  bioInput.value = bio;
-  document.getElementById('myBioCounter').textContent = bio.length;
+  document.getElementById('myBioView').textContent = bio;
+  document.getElementById('bioViewWrap').style.display = 'flex';
+  document.getElementById('bioEditWrap').style.display = 'none';
   // 붐 수치 표시 (읽기 전용)
   const boomRow = document.getElementById('myBoomRow');
   boomRow.innerHTML = '';
@@ -2176,6 +2207,8 @@ function getLangFlagHtml() {
 function renderLangMenuItems() {
   document.querySelectorAll('.menu-item-lang').forEach(el => el.remove());
   if (!currentLocation) return;
+  // 한국어는 기본 위치별 채팅방으로 충분 — 언어방 별도 생성 안 함
+  if (currentLang === 'ko') return;
   const { guDisplay: gd, dongDisplay: dd } = currentLocation;
   const list = document.querySelector('.menu-list');
   const dmBtn = list ? list.querySelector('[onclick="showDmList()"]') : null;
