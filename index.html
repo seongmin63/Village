@@ -448,12 +448,9 @@ body {
 }
 @media (max-width: 520px) {
   #introCountries {
-    right: auto; top: auto; transform: translateX(-50%);
-    bottom: 20px; left: 50%; text-align: center;
+    top: auto; transform: none;
+    bottom: 16px; right: 14px; text-align: right;
   }
-  #introCountries .ic-list { align-items: center; flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 10px 14px; }
-  #introCountries .ic-soon { width: 100%; text-align: center; margin: 0; }
-  #introCountries .ic-item { flex-direction: row-reverse; }
 }
 /* ── About 화면 ── */
 #aboutScreen { align-items: flex-start; overflow-y: auto; padding: 0; }
@@ -2829,12 +2826,16 @@ function renderLangMenuItems() {
   const cdnCode = LANG_CDN[currentLang] || 'un';
   const langName = LANG_NATIVE[currentLang] || currentLang.toUpperCase();
   const flagHtml = `<img src="https://flagcdn.com/${cdnCode}.svg" alt="" style="width:20px;height:15px;object-fit:cover;border-radius:2px;vertical-align:middle;margin-right:5px;flex-shrink:0">`;
+  const { si, siDisplay: sd } = currentLocation;
+  const siLangSvg = `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#00704A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="10" width="5" height="11" rx="1"/><rect x="7" y="6" width="5" height="15" rx="1"/><rect x="13" y="2" width="5" height="19" rx="1"/><rect x="19" y="8" width="4" height="13" rx="1"/><line x1="1" y1="21" x2="23" y2="21"/></svg>`;
   const guLangSvg = `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#00704A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="7" height="14" rx="1.2"/><rect x="9" y="3" width="9" height="18" rx="1.2"/><line x1="12" y1="7" x2="12" y2="7.1"/><line x1="15" y1="7" x2="15" y2="7.1"/><line x1="12" y1="11" x2="12" y2="11.1"/><line x1="15" y1="11" x2="15" y2="11.1"/><line x1="12" y1="15" x2="12" y2="15.1"/><line x1="15" y1="15" x2="15" y2="15.1"/><line x1="2" y1="21" x2="22" y2="21"/></svg>`;
   const dongLangSvg = `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#00704A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5L12 4l9 7.5V21a1 1 0 01-1 1H4a1 1 0 01-1-1z"/><rect x="9" y="13" width="6" height="9" rx="1"/></svg>`;
-  [
-    { type:'gu_lang',   icon: guLangSvg,   title: flagHtml + langName + ' · ' + gd + t('room_suffix'),  sub: t('menu_lang_gu_sub') },
-    { type:'dong_lang', icon: dongLangSvg, title: flagHtml + langName + ' · ' + dd + t('room_suffix'),  sub: t('menu_lang_dong_sub') }
-  ].forEach(({ type, icon, title, sub }) => {
+  const langItems = [];
+  if (si) langItems.push({ type:'si_lang', icon: siLangSvg, title: flagHtml + langName + ' · ' + sd + t('room_suffix'), sub: t('menu_lang_si_sub') || (langName + ' speakers in ' + sd) });
+  langItems.push(
+    { type:'gu_lang', icon: guLangSvg, title: flagHtml + langName + ' · ' + gd + t('room_suffix'), sub: t('menu_lang_gu_sub') }
+  );
+  langItems.forEach(({ type, icon, title, sub }) => {
     const btn = document.createElement('button');
     btn.className = 'menu-item menu-item-lang';
     btn.onclick = () => enterGroupChat(type);
@@ -2860,6 +2861,8 @@ function enterGroupChat(type) {
     enterChat('gu_' + gu, gd + t('room_suffix'), si ? sd : '', gd, 'menuScreen');
   else if (type === 'dong')
     enterChat('dong_' + gu + '_' + dong, dd + t('room_suffix'), gd, gd + ' · ' + dd, 'menuScreen');
+  else if (type === 'si_lang')
+    enterChat('si_' + si + '_lang_' + currentLang, flagHtml + langName + ' · ' + sd + t('room_suffix'), '', sd, 'menuScreen');
   else if (type === 'gu_lang')
     enterChat('gu_' + gu + '_lang_' + currentLang, flagHtml + langName + ' · ' + gd + t('room_suffix'), '', gd, 'menuScreen');
   else if (type === 'dong_lang')
@@ -3759,7 +3762,8 @@ async function openPartnerModal(sender, gender, avatar, avatarHtml, nationality 
     const lastVoteSnap = await window._getDoc(window._doc(window._db, 'votes', getDeviceId() + '__LAST_VOTE_TIME'));
     const lastVoteTs = lastVoteSnap.exists() ? (lastVoteSnap.data().ts?.toDate ? lastVoteSnap.data().ts.toDate() : new Date(lastVoteSnap.data().ts)) : null;
     const hourCooldown = lastVoteTs && (Date.now() - lastVoteTs.getTime()) < 60 * 60 * 1000;
-    if (voteSnap.exists()) {
+    const isPermanentVote = voteSnap.exists() && !voteSnap.data().date; // 신형식 (date 없음 = 영구)
+    if (isPermanentVote) {
       // 이미 이 대상에게 투표함 → 영구 비활성, 투표한 쪽 강조
       if (voteSnap.data().type === 'up') upBtn.classList.add('voted');
       else downBtn.classList.add('voted');
