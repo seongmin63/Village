@@ -711,8 +711,19 @@ body {
       <div class="ad-slide" onclick="window.open('https://oeeo.store/','_blank','noopener')">
         <img src="ad_oeeo.png" alt="oeeo strawberry">
       </div>
-      <div class="ad-slide">
-        <img src="ad_contact.png" alt="광고 문의">
+      <div class="ad-slide" id="adContactSlide" style="display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:linear-gradient(135deg,#004f35 0%,#00704A 60%,#00916a 100%);height:80px;width:100%;gap:16px">
+        <div style="display:flex;align-items:center;gap:14px;min-width:0">
+          <div style="width:2px;height:40px;background:rgba(255,255,255,0.35);border-radius:2px;flex-shrink:0"></div>
+          <div style="min-width:0">
+            <div style="font-size:10px;font-weight:600;letter-spacing:2px;color:rgba(255,255,255,0.55);text-transform:uppercase;margin-bottom:3px">Advertisement</div>
+            <div style="font-size:17px;font-weight:800;color:#fff;letter-spacing:-0.3px;line-height:1.1">Partner with Us</div>
+            <div style="font-size:11px;color:rgba(255,255,255,0.7);margin-top:2px;font-weight:400">광고 문의</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+          <span style="font-size:13px;font-weight:600;color:#fff;letter-spacing:0.2px">contact@village-chat.com</span>
+        </div>
       </div>
     </div>
   </div>
@@ -1297,7 +1308,7 @@ function renderAbout() {
   const isRtl = lang === 'ar';
   document.getElementById('aboutFooter').innerHTML = `
     <div class="about-footer-title" style="${isRtl?'direction:rtl;text-align:right':''}">Village Chat</div>
-    <div class="about-footer-row">${c.contact}: <a href="mailto:smchoi0603@gmail.com">smchoi0603@gmail.com</a></div>
+    <div class="about-footer-row">${c.contact}: <a href="mailto:contact@village-chat.com">contact@village-chat.com</a></div>
     <div class="about-footer-row"><a href="#" onclick="event.preventDefault();showScreen('privacyScreen')">${c.privacy}</a> &nbsp;·&nbsp; <a href="#" onclick="event.preventDefault();showScreen('termsScreen')">${c.terms}</a></div>
     <div class="about-footer-row" style="margin-top:10px;font-size:11.5px">${c.copyright}</div>`;
 }
@@ -1432,7 +1443,7 @@ function renderPrivacy() {
       <p>${isEn ? 'If you have any questions about this Privacy Policy, please contact:' : '개인정보 관련 문의사항은 아래로 연락해 주세요.'}</p>
       <p><strong>Village Chat</strong><br>
       ${isEn ? 'Privacy Officer' : '개인정보 보호책임자'}: Seongmin Choi<br>
-      Email: <a href="mailto:smchoi0603@gmail.com">smchoi0603@gmail.com</a></p>
+      Email: <a href="mailto:contact@village-chat.com">contact@village-chat.com</a></p>
     </div>`;
 }
 
@@ -1522,7 +1533,7 @@ function renderTerms() {
       <div class="legal-section-title">${isEn ? '10. Contact' : '10. 문의'}</div>
       <p>${isEn ? 'If you have any questions about these Terms, please contact:' : '약관 관련 문의는 아래로 연락해 주세요.'}</p>
       <p><strong>Village Chat</strong><br>
-      Email: <a href="mailto:smchoi0603@gmail.com">smchoi0603@gmail.com</a></p>
+      Email: <a href="mailto:contact@village-chat.com">contact@village-chat.com</a></p>
     </div>`;
 }
 
