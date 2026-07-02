@@ -2734,19 +2734,6 @@ function confirmDeleteProfile() {
   deleteProfile();
 }
 
-async function cleanupInactiveUsers() {
-  if (!window._firebaseReady) return;
-  try {
-    const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    const snap = await window._getDocs(
-      window._query(
-        window._collection(window._db, 'users'),
-        window._where('lastSeen', '<', cutoff)
-      )
-    );
-    snap.forEach(d => window._deleteDoc(d.ref).catch(() => {}));
-  } catch(e) {}
-}
 
 async function deleteMyInbox(nickname) {
   if (!nickname || !window._firebaseReady) return;
